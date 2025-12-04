@@ -1,19 +1,21 @@
 <?php	
 // Create Class
 class BookshelfCategory {
-	public $title;
-	public $icon;
-	public $queryString;
-	public $userMessage;
-	public $iconBackground;
-	public $link;
+	public string $title;
+	public string $icon;
+	public string $queryString;
+	public string $ytdQueryString;
+	public string $userMessage;
+	public string $iconBackground;
+	public string $link;
 	
-	public function __construct($title, $icon, $queryString, $userMessage, $iconBackground, $link) {
+	public function __construct($title, $icon, $queryString, $ytdQueryString, $userMessage, $iconBackground, $link) {
 	    $this->title = $title;
 	    $this->icon = $icon;
-	    $this->query = $queryString;
-	    $this->message = $userMessage;
-	    $this->background = $iconBackground;
+	    $this->queryString = $queryString;
+	    $this->ytdQueryString = $ytdQueryString;
+	    $this->userMessage = $userMessage;
+	    $this->iconBackground = $iconBackground;
 	    $this->link = $link;
 	}			
 }

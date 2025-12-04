@@ -16,18 +16,42 @@
 	<section class="bookshelf">
 		
 		<?php 
-			$currently_reading = new BookshelfCategory('Currently Reading', '/img/iconb_nightstand.svg', "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$wp_current_user_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC", "You're not currently reading any books? Do you not...like books? If you want to give it a shot, <a href='/add-book/'>add one</a> you're currently reading.", 'bg-yellow', '/nightstand/');
-			$recently_finished = new BookshelfCategory('Recently Finished', '/img/icon_checkmark.svg', "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' ORDER BY date_finished DESC", "Reading is good for the soul. <a href='/add-book/'>Add a book</a> you've made all the way through.", 'bg-yellow', '/finished/');
-			$wishlist = new BookshelfCategory('Wishlist', '/img/iconb_wishlist.svg', "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND (date_started IS NULL OR date_started = '0000-00-00' OR date_started = '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY RAND() DESC", "There are maybe 130 million books published. Would you like to <a href='/add-book/'>add one</a> of them to your wishlist?", 'bg-yellow', '/wishlist/');
+			$currently_reading = new BookshelfCategory(
+				'Currently Reading',
+				'/img/iconb_nightstand.svg',
+				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$wp_current_user_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC",
+				'',
+				"You're not currently reading any books? Do you not...like books? If you want to give it a shot, <a href='/add-book/'>add one</a> you're currently reading.",
+				'bg-yellow',
+				'/nightstand/'
+		);
+			$recently_finished = new BookshelfCategory(
+				'Recently Finished',
+				'/img/icon_checkmark.svg',
+				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' ORDER BY date_finished DESC",
+				'',
+				"Reading is good for the soul. <a href='/add-book/'>Add a book</a> you've made all the way through.",
+				'bg-yellow',
+				'/finished/'
+			);
+			$wishlist = new BookshelfCategory(
+				'Wishlist',
+				'/img/iconb_wishlist.svg',
+				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND (date_started IS NULL OR date_started = '0000-00-00' OR date_started = '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY RAND() DESC",
+				'',
+				"There are maybe 130 million books published. Would you like to <a href='/add-book/'>add one</a> of them to your wishlist?",
+				'bg-yellow',
+				'/wishlist/'
+			);
 			
 			$bookshelf_categories = array($currently_reading, $recently_finished, $wishlist);
 			
 			foreach ($bookshelf_categories as $bookshelf_category) {
 			
-				$book_entries = $wpdb->get_results($bookshelf_category->query);
+				$book_entries = $wpdb->get_results($bookshelf_category->queryString);
 			?>
 			<div class="bookshelf-category<?php // if (empty($book_entries)) { echo ' flex align-items-center'; } ?>">
-				<div class="icon-wrapper icon-medium full-width <?php echo $bookshelf_category->background; ?>">
+				<div class="icon-wrapper icon-medium full-width <?php echo $bookshelf_category->iconBackground; ?>">
 						<div class="icon-background">
 							<a class="" href="<?php echo $bookshelf_category->link; ?>">
 								<?php echo file_get_contents( get_stylesheet_directory() . $bookshelf_category->icon); ?>
@@ -36,7 +60,7 @@
 						<h4><a class="" href="<?php echo $bookshelf_category->link; ?>"><?php echo $bookshelf_category->title; ?></a></h4>
 				</div>
 				<?php if (empty($book_entries)) { ?>
-						<div class="user-message"><p><?php echo $bookshelf_category->message; ?></p></div>
+						<div class="user-message"><p><?php echo $bookshelf_category->userMessage; ?></p></div>
 				<?php } else { ?>
 					<div class="slides-wrapper slider">
 						<div class="slides">
