@@ -14,7 +14,7 @@
 		<div class="wrapper">
 			<div class="logo-wrapper flex nowrap align-items-center gap-15">
 				<a href="/bookshelf/" class="logo">
-					<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/icon_bookworm-logo.svg' ); ?>
+					<?php echo file_get_contents( get_stylesheet_directory() . '/img/icon_bookworm-logo.svg' ); ?>
 				</a>
 				<div class="logo-text"><a href="/bookshelf/">BookWorm</a></div>
 			</div>
@@ -22,12 +22,12 @@
 			    <div class="flex nowrap align-items-center gap-15">
 			        <div class="nav-icon nav-icon-add-book">
 			            <a class="nav-icon-anchor" href="/add-book/" alt="Add Book" title="Add Book">
-			                <?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/icon_plus.svg'); ?>
+			                <?php echo file_get_contents( get_stylesheet_directory() . '/img/icon_plus.svg'); ?>
 			            </a>
 			        </div>
 			        <div class="nav-icon nav-icon-bookshelf">
 			            <a id="bookshelf_nav_item_side" class="nav-icon-anchor" href="/bookshelf/" alt="Bookshelf" title="Bookshelf">
-			                <?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_bookshelf_white.svg'); ?>
+			                <?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_bookshelf_white.svg'); ?>
 			            </a>
 			            <div id="bookshelf_nav_side" class="popup popup-small">
 			                <p><a href="/bookshelf/nightstand/">Currently Reading</a></p>
@@ -37,12 +37,12 @@
 			        </div>
 			        <div class="nav-icon nav-icon-notes">
 			            <a class="nav-icon-anchor" href="/notes/" alt="Notes" title="Notes">
-			                <?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_notes.svg'); ?>
+			                <?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_notes.svg'); ?>
 			            </a>
 			        </div>
 			        <div class="nav-icon nav-icon-recommend">
 			            <a class="nav-icon-anchor" href="/community/" alt="Community" title="Comunity">
-			                <?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/community.svg'); ?>
+			                <?php echo file_get_contents( get_stylesheet_directory() . '/img/community.svg'); ?>
 			            </a>
 			        </div>
 			    </div>
@@ -59,7 +59,7 @@
 					<div class="notifications">
 						<a href="/notifications/">
 							<span class="notifications-icon">
-								<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/bell.svg' ); ?>
+								<?php echo file_get_contents( get_stylesheet_directory() . '/img/bell.svg' ); ?>
 							</span>
 							<?php if (count($unread_notifications) > 0) { ?>
 								<span class="notifications-indicator">
@@ -73,7 +73,7 @@
 					}
 				?>
 				<span class="useravatar-wrapper">
-					<?php // echo file_get_contents( get_stylesheet_directory_uri() . '/img/user-circle.svg' ); ?>
+					<?php // echo file_get_contents( get_stylesheet_directory() . '/img/user-circle.svg' ); ?>
 					<!-- <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
 					<path fill-rule="evenodd" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm-2 9a4 4 0 0 0-4 4v1a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-1a4 4 0 0 0-4-4h-4Z" clip-rule="evenodd"/>
 					</svg>-->

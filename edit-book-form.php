@@ -24,7 +24,7 @@
 			<div class="user-message"><p>No book was selected to update. Want to go to your bookshelf?</p></div>
 				<div class="nav-icon flex align-items-center justify-center">
 					<a class="nav-icon-anchor" href="/bookshelf/">
-						<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_bookshelf.svg'); ?>
+						<?php echo file_get_contents(get_stylesheet_directory() . '/img/iconb_bookshelf.svg'); ?>
 					</a>
 				</div>
 		<?php 
@@ -138,7 +138,7 @@
 			<div class="form-section">
 				<div class="icon-wrapper icon-medium full-width bg-lt-yellow">
 					<div class="icon-background">
-						<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_calendar.svg'); ?>
+						<?php echo file_get_contents(get_stylesheet_directory() . '/img/iconb_calendar.svg'); ?>
 					</div>
 					<h4>Reading Dates</h4>
 				</div>
@@ -160,7 +160,7 @@
 				<!-- <div class="flex nowrap justify-space-between align-items-center"> -->
 					<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 						<div class="icon-background">
-							<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_notes.svg'); ?>
+							<?php echo file_get_contents(get_stylesheet_directory() . '/img/iconb_notes.svg'); ?>
 						</div>
 						<h4>My Notes</h4>
 					</div>
@@ -209,7 +209,7 @@
 			<div class="form-section">
 				<div class="icon-wrapper icon-medium full-width bg-lt-purple">
 					<div class="icon-background">
-						<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_recommend.svg'); ?>
+						<?php echo file_get_contents(get_stylesheet_directory() . '/img/iconb_recommend.svg'); ?>
 					</div>
 					<h4>Recommendations</h4>
 				</div>
@@ -387,7 +387,7 @@
 		<a class="close-button popup-close" href="#"><img src="<?php echo get_stylesheet_directory_uri() . '/img/icon_close.svg'; ?>" alt="Close button" /></a>
 		<div class="popup-heading-wrapper">
 			<div class="icon-background">
-				<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/icon_bookworm-logo.svg' ); ?>
+				<?php echo file_get_contents(get_stylesheet_directory() . '/img/icon_bookworm-logo.svg' ); ?>
 			</div>
 			<h4>Book updated</h4>
 		</div>

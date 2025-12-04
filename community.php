@@ -30,7 +30,7 @@
 	<section>
 		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 			<div class="icon-background">
-				<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/friends.svg'); ?>
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/friends.svg'); ?>
 			</div>
 			<h4>Friends</h4>
 		</div>
@@ -112,7 +112,7 @@
 	<section>
 		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 			<div class="icon-background">
-				<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_recommend.svg'); ?>
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_recommend.svg'); ?>
 			</div>
 			<h4>Recommendations</h4>
 		</div>

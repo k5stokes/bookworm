@@ -55,7 +55,7 @@
 			</div>
 			<div class="sort-button">
 				<div class="sort-button-icon-wrapper flex align-items-center">
-					<?php echo file_get_contents( get_stylesheet_directory_uri() . '/img/iconb_arrows.svg'); ?>
+					<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_arrows.svg'); ?>
 				</div>
 			</div>
 			<input type="hidden" name="bookshelf_sorting" value="DESC" />

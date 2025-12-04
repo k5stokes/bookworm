@@ -30,7 +30,7 @@
 				<div class="icon-wrapper icon-medium full-width <?php echo $bookshelf_category->background; ?>">
 						<div class="icon-background">
 							<a class="" href="<?php echo $bookshelf_category->link; ?>">
-								<?php echo file_get_contents( get_stylesheet_directory_uri() . $bookshelf_category->icon); ?>
+								<?php echo file_get_contents( get_stylesheet_directory() . $bookshelf_category->icon); ?>
 							</a>
 						</div>
 						<h4><a class="" href="<?php echo $bookshelf_category->link; ?>"><?php echo $bookshelf_category->title; ?></a></h4>
