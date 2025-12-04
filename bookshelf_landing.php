@@ -20,7 +20,7 @@
 				'Currently Reading',
 				'/img/iconb_nightstand.svg',
 				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$wp_current_user_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC",
-				'',
+				'date_started',
 				"You're not currently reading any books? Do you not...like books? If you want to give it a shot, <a href='/add-book/'>add one</a> you're currently reading.",
 				'bg-yellow',
 				'/nightstand/'
@@ -29,7 +29,7 @@
 				'Recently Finished',
 				'/img/icon_checkmark.svg',
 				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' ORDER BY date_finished DESC",
-				'',
+				'date_finished',
 				"Reading is good for the soul. <a href='/add-book/'>Add a book</a> you've made all the way through.",
 				'bg-yellow',
 				'/finished/'
@@ -49,6 +49,74 @@
 			foreach ($bookshelf_categories as $bookshelf_category) {
 			
 				$book_entries = $wpdb->get_results($bookshelf_category->queryString);
+
+				// Temporary debug output: show a few `date_started` values when WP_DEBUG is enabled
+				if (defined('WP_DEBUG') && WP_DEBUG) {
+					echo '<div class="debug-dates" style="background:#fff7cc;padding:8px;margin:8px 0;border:1px solid #eee;font-size:13px;">';
+					echo '<strong>Debug: date_started values (up to 5 entries)</strong><br/>';
+					$debugCount = 0;
+					foreach ($book_entries as $dbgEntry) {
+						if ($debugCount++ >= 5) break;
+						echo 'ID: ' . htmlspecialchars($dbgEntry->id ?? '') . ' — date_started: ' . htmlspecialchars($dbgEntry->date_started ?? '') . '<br/>';
+					}
+					echo '</div>';
+				}
+				// print_r($book_entries);
+
+				// Define the "Today" reference date for consistent testing
+				$now = new DateTime(); 
+
+				// Start of Current Calendar Year
+				$startOfCurrentYear = (clone $now)->setDate($now->format('Y'), 1, 1);
+
+				// Start of Last 6 Months
+				$sixMonthsAgo = (clone $now)->sub(new DateInterval('P6M'));
+
+				$date_query_field = $bookshelf_category->ytdQueryString;
+
+				/**
+				 * Filter function to check if a record's date is within the current calendar year.
+				 */
+				$filterCurrentYear = function ($record) use ($startOfCurrentYear, $date_query_field) {
+					// Reject empty or placeholder dates
+					if (empty($record->$date_query_field) || in_array($record->$date_query_field, ['0000-00-00', '1970-01-01'], true)) {
+						return false;
+					}
+
+					// Try parsing as Y-m-d first (most likely format), fall back to DateTime parser
+					$recordDate = DateTime::createFromFormat('Y-m-d', $record->$date_query_field);
+					if ($recordDate === false) {
+						try {
+							$recordDate = new DateTime($record->$date_query_field);
+						} catch (Exception $e) {
+							return false;
+						}
+					}
+
+					$recordDate->setTime(0, 0, 0);
+					return $recordDate >= $startOfCurrentYear;
+				};
+
+				/**
+				 * Filter function to check if a record's date is within the last 6 rolling months.
+				 */
+				$filterLastSixMonths = function ($record) use ($sixMonthsAgo, $date_query_field) {
+					if (empty($record->$date_query_field) || in_array($record->$date_query_field, ['0000-00-00', '1970-01-01'], true)) {
+						return false;
+					}
+
+					$recordDate = DateTime::createFromFormat('Y-m-d', $record->$date_query_field);
+					if ($recordDate === false) {
+						try {
+							$recordDate = new DateTime($record->$date_query_field);
+						} catch (Exception $e) {
+							return false;
+						}
+					}
+
+					$recordDate->setTime(0, 0, 0);
+					return $recordDate >= $sixMonthsAgo;
+				};
 			?>
 			<div class="bookshelf-category<?php // if (empty($book_entries)) { echo ' flex align-items-center'; } ?>">
 				<div class="icon-wrapper icon-medium full-width <?php echo $bookshelf_category->iconBackground; ?>">
@@ -61,7 +129,15 @@
 				</div>
 				<?php if (empty($book_entries)) { ?>
 						<div class="user-message"><p><?php echo $bookshelf_category->userMessage; ?></p></div>
-				<?php } else { ?>
+				<?php
+					} else {
+						// Apply Filters and Count
+						if ($date_query_field != '') {
+							$countCurrentYear = count(array_filter($book_entries, $filterCurrentYear));
+							//$countLastSixMonths = count(array_filter($book_entries, $filterLastSixMonths));	
+							echo "<p>This Year: <strong>" . $countCurrentYear . "</strong></p>";
+						}
+				?>
 					<div class="slides-wrapper slider">
 						<div class="slides">
 							<ul class="slides-inner">
