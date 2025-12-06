@@ -20,6 +20,75 @@ class BookshelfCategory {
 	}			
 }
 
+/*
+** Date Filtering Functions **
+*/
+/**
+ * Creates a configured Closure for filtering records by a specific calendar year.
+ *
+ * @param int $date_query_field The field in the entry object that contains the date to be checked.
+ * @return \Closure A Closure ready for use with array_filter().
+ */
+function create_year_filter(string $date_query_field): \Closure {
+    
+    /* Variables for Date Filtering */
+	// Define the "Today" reference date for consistent testing
+	$now = new DateTime(); 
+
+	// Start of Current Calendar Year
+	$startOfCurrentYear = (clone $now)->setDate($now->format('Y'), 1, 1);
+
+	return function ($record) use ($startOfCurrentYear, $date_query_field) {
+		// Reject empty or placeholder dates
+		if (empty($record->$date_query_field) || in_array($record->$date_query_field, ['0000-00-00', '1970-01-01'], true)) {
+			return false;
+		}
+
+		// Try parsing as Y-m-d first (most likely format), fall back to DateTime parser
+		$recordDate = DateTime::createFromFormat('Y-m-d', $record->$date_query_field);
+		if ($recordDate === false) {
+			try {
+				$recordDate = new DateTime($record->$date_query_field);
+			} catch (Exception $e) {
+				return false;
+			}
+		}
+
+		$recordDate->setTime(0, 0, 0);
+		return $recordDate >= $startOfCurrentYear;
+	};
+}
+
+function create_date_filter(string $date_query_field, int $numMonths): \Closure {
+    
+    /* Variables for Date Filtering */
+	// Define the "Today" reference date for consistent testing
+	$now = new DateTime(); 
+
+	// Start of Last X Months
+	$xMonthsAgo = (clone $now)->sub(new DateInterval('P' . $numMonths . 'M'));
+
+	return function ($record) use ($xMonthsAgo, $date_query_field) {
+		// Reject empty or placeholder dates
+		if (empty($record->$date_query_field) || in_array($record->$date_query_field, ['0000-00-00', '1970-01-01'], true)) {
+			return false;
+		}
+
+		// Try parsing as Y-m-d first (most likely format), fall back to DateTime parser
+		$recordDate = DateTime::createFromFormat('Y-m-d', $record->$date_query_field);
+		if ($recordDate === false) {
+			try {
+				$recordDate = new DateTime($record->$date_query_field);
+			} catch (Exception $e) {
+				return false;
+			}
+		}
+
+		$recordDate->setTime(0, 0, 0);
+		return $recordDate >= $xMonthsAgo;
+	};
+}
+
 // Sanitize text function
 function sanitizeInput($input) {
 	$input = trim($input);

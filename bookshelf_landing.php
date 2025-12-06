@@ -63,60 +63,7 @@
 				}
 				// print_r($book_entries);
 
-				// Define the "Today" reference date for consistent testing
-				$now = new DateTime(); 
-
-				// Start of Current Calendar Year
-				$startOfCurrentYear = (clone $now)->setDate($now->format('Y'), 1, 1);
-
-				// Start of Last 6 Months
-				$sixMonthsAgo = (clone $now)->sub(new DateInterval('P6M'));
-
 				$date_query_field = $bookshelf_category->ytdQueryString;
-
-				/**
-				 * Filter function to check if a record's date is within the current calendar year.
-				 */
-				$filterCurrentYear = function ($record) use ($startOfCurrentYear, $date_query_field) {
-					// Reject empty or placeholder dates
-					if (empty($record->$date_query_field) || in_array($record->$date_query_field, ['0000-00-00', '1970-01-01'], true)) {
-						return false;
-					}
-
-					// Try parsing as Y-m-d first (most likely format), fall back to DateTime parser
-					$recordDate = DateTime::createFromFormat('Y-m-d', $record->$date_query_field);
-					if ($recordDate === false) {
-						try {
-							$recordDate = new DateTime($record->$date_query_field);
-						} catch (Exception $e) {
-							return false;
-						}
-					}
-
-					$recordDate->setTime(0, 0, 0);
-					return $recordDate >= $startOfCurrentYear;
-				};
-
-				/**
-				 * Filter function to check if a record's date is within the last 6 rolling months.
-				 */
-				$filterLastSixMonths = function ($record) use ($sixMonthsAgo, $date_query_field) {
-					if (empty($record->$date_query_field) || in_array($record->$date_query_field, ['0000-00-00', '1970-01-01'], true)) {
-						return false;
-					}
-
-					$recordDate = DateTime::createFromFormat('Y-m-d', $record->$date_query_field);
-					if ($recordDate === false) {
-						try {
-							$recordDate = new DateTime($record->$date_query_field);
-						} catch (Exception $e) {
-							return false;
-						}
-					}
-
-					$recordDate->setTime(0, 0, 0);
-					return $recordDate >= $sixMonthsAgo;
-				};
 			?>
 			<div class="bookshelf-category<?php // if (empty($book_entries)) { echo ' flex align-items-center'; } ?>">
 				<div class="icon-wrapper icon-medium full-width <?php echo $bookshelf_category->iconBackground; ?>">
@@ -133,8 +80,8 @@
 					} else {
 						// Apply Filters and Count
 						if ($date_query_field != '') {
-							$countCurrentYear = count(array_filter($book_entries, $filterCurrentYear));
-							//$countLastSixMonths = count(array_filter($book_entries, $filterLastSixMonths));	
+							$filterClosure = create_year_filter($date_query_field);
+							$countCurrentYear = count(array_filter($book_entries, $filterClosure));
 							echo "<p>This Year: <strong>" . $countCurrentYear . "</strong></p>";
 						}
 				?>

@@ -17,12 +17,16 @@
 	
 	if ($bookshelf_category == 'nightstand') {
 		$book_entries = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$wp_current_user_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC");
+		$date_query_field = 'date_started';
 	} elseif ($bookshelf_category == 'finished') {
 		$book_entries = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' ORDER BY date_finished DESC");
+		$date_query_field = 'date_finished';
 	} elseif ($bookshelf_category == 'wishlist') {
 		$book_entries = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND (date_started IS NULL OR date_started = '0000-00-00' OR date_started = '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC");
+		$date_query_field = '';
 	} elseif ($bookshelf_category == 'notes') {
 		$book_entries = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND (notes IS NOT NULL AND notes != '' AND notes != 'Enter your notes for this book.') ORDER BY date_finished DESC");
+		$date_query_field = 'date_finished';
 	}
 ?>
 
@@ -76,10 +80,31 @@
 				'bookshelf_category' => $bookshelf_category
 			));
 		?>
-		
 	</div>
 
 	<section class="bookshelf" id="bookshelf">
+		<div class="category-meta">
+			<?php 
+				// Apply Filters and Count
+				if ($date_query_field != '') {
+					$filterClosure = create_year_filter($date_query_field);
+					$countCurrentYear = count(array_filter($book_entries, $filterClosure));
+					echo "<p>This Year: <strong>" . $countCurrentYear . "</strong></p>";
+
+					$filterClosure = create_date_filter($date_query_field, 3);
+					$countThreeMonths = count(array_filter($book_entries, $filterClosure));
+					echo "<p>Last 3 Months: <strong>" . $countThreeMonths . "</strong></p>";
+
+					$filterClosure = create_date_filter($date_query_field, 6);
+					$countSixMonths = count(array_filter($book_entries, $filterClosure));
+					echo "<p>Last 6 Months: <strong>" . $countSixMonths . "</strong></p>";
+
+					$filterClosure = create_date_filter($date_query_field, 12);
+					$countTwelveMonths = count(array_filter($book_entries, $filterClosure));
+					echo "<p>Last 12 Months: <strong>" . $countTwelveMonths . "</strong></p>";
+				}
+			?>
+		</div>
 		<?php 
 			if (empty($book_entries)) {
 				if ($bookshelf_category == 'nightstand') {
