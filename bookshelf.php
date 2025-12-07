@@ -89,19 +89,17 @@
 				if ($date_query_field != '') {
 					$filterClosure = create_year_filter($date_query_field);
 					$countCurrentYear = count(array_filter($book_entries, $filterClosure));
-					echo "<p>This Year: <strong>" . $countCurrentYear . "</strong></p>";
+					echo "<p><span>This Year: <strong>" . $countCurrentYear . "</strong></span> &sdot; ";
 
 					$filterClosure = create_date_filter($date_query_field, 3);
 					$countThreeMonths = count(array_filter($book_entries, $filterClosure));
-					echo "<p>Last 3 Months: <strong>" . $countThreeMonths . "</strong></p>";
-
+					echo "<span>Last 3 Months: <strong>" . $countThreeMonths . "</strong></span> &sdot; ";
 					$filterClosure = create_date_filter($date_query_field, 6);
 					$countSixMonths = count(array_filter($book_entries, $filterClosure));
-					echo "<p>Last 6 Months: <strong>" . $countSixMonths . "</strong></p>";
-
+					echo "<span>Last 6 Months: <strong>" . $countSixMonths . "</strong></span> &sdot; ";
 					$filterClosure = create_date_filter($date_query_field, 12);
 					$countTwelveMonths = count(array_filter($book_entries, $filterClosure));
-					echo "<p>Last 12 Months: <strong>" . $countTwelveMonths . "</strong></p>";
+					echo "<span>Last 12 Months: <strong>" . $countTwelveMonths . "</strong></span></p>";
 				}
 			?>
 		</div>
