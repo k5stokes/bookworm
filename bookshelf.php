@@ -31,10 +31,17 @@
 ?>
 
 <main id="main" role="main" class="bookshelf">
-
-	<div class="bookshelf-heading-filter-wrapper flex justify-space-between <?php if ($bookshelf_category == 'wishlist' || $bookshelf_category == 'finished') { echo 'align-items-start'; } else { echo 'align-items-center'; } ?>">
-		<?php if ($bookshelf_category == 'wishlist' || $bookshelf_category == 'finished') { ?><div class="header-wrapper"><?php } ?>
+	<div class="bookshelf-heading-wrapper flex justify-space-between align-items-center">
 		<h3><?php echo get_the_title(); ?> <span class="small">(<?php echo count($book_entries); ?>)</span></h3>
+		<?php
+			get_template_part('templates/content', 'booklist-filters', array(
+				'book_entries' => $book_entries,
+				'wp_current_user_id' => $wp_current_user_id,
+				'bookshelf_category' => $bookshelf_category
+			));
+		?>
+	</div>
+	<div class="bookshelf-heading-wrapper flex justify-space-between align-items-center">
 		<?php
 			if ($bookshelf_category == 'wishlist' || $bookshelf_category == 'finished') {
 				if ($bookshelf_category == 'wishlist') {
@@ -43,46 +50,32 @@
 					$search_placeholder = 'Search Finished Books';
 				}
 		?>
-			<form id="search_wishlist_form" action="/" method="POST">
-				<div class="form-section">
-					<label aria-hidden="false" style="display: none;" for="title"><?php echo $search_placeholder; ?></label>
-					<div class="book-title-search">
-						<input id="book_title" name="title" type="text" value="" placeholder="<?php echo $search_placeholder; ?>">
-						<input id="bookshelf_category" name="bookshelf_category" type="hidden" value="<?php echo $search_placeholder; ?>">
-						<div class="tooltip search-tooltip">
-							<a style="top: -38px;" class="close-button search-close" href="#"><img src="<?php echo get_stylesheet_directory_uri() . '/img/icon_close.svg'; ?>" alt="Close button" /></a>
-							<section id="search_results" class="search-results">
-							</section>
-						</div>
-					</div>
-					<div id="validation_error" class="validation_error"><p>Please enter a book</p></div>
-					<div class="book-display">
-						<div class="book-entry-thumb">
-							<img class="book_entry_img" src="">
-						</div>
-						<div class="book-entry-details">
-							<div id="book_entry_title" class="book-entry-title">&nbsp;</div>
-							<div id="book_entry_author" class="book-entry-author">&nbsp;</div>
-							<div id="book_entry_pub_date" class="book-entry-publication-date">&nbsp;</div>
-							<div id="book_entry_description" class="book-entry-description">&nbsp;</div>
-						</div>
+			<form id="search_wishlist_form" class="bookshelf-search-form" action="/" method="POST">
+				<label aria-hidden="false" style="display: none;" for="title"><?php echo $search_placeholder; ?></label>
+				<div class="book-title-search">
+					<input id="book_title" name="title" type="text" value="" placeholder="<?php echo $search_placeholder; ?>">
+					<input id="bookshelf_category" name="bookshelf_category" type="hidden" value="<?php echo $search_placeholder; ?>">
+					<div class="tooltip search-tooltip">
+						<a style="top: -38px;" class="close-button search-close" href="#"><img src="<?php echo get_stylesheet_directory_uri() . '/img/icon_close.svg'; ?>" alt="Close button" /></a>
+						<section id="search_results" class="search-results">
+						</section>
 					</div>
 				</div>
-				<input type="hidden" name="user_id_from" id="user_id_from" value="<?php echo get_current_user_id(); ?>">
+				<div id="validation_error" class="validation_error"><p>Please enter a book</p></div>
+				<div class="book-display">
+					<div class="book-entry-thumb">
+						<img class="book_entry_img" src="">
+					</div>
+					<div class="book-entry-details">
+						<div id="book_entry_title" class="book-entry-title">&nbsp;</div>
+						<div id="book_entry_author" class="book-entry-author">&nbsp;</div>
+						<div id="book_entry_pub_date" class="book-entry-publication-date">&nbsp;</div>
+						<div id="book_entry_description" class="book-entry-description">&nbsp;</div>
+					</div>
+				</div>
+				<input id="user_id_from" name="user_id_from" type="hidden" value="<?php echo $wp_current_user_id; ?>" />
 			</form>
-		</div>
-		<?php
-			}
-			
-			get_template_part('templates/content', 'booklist-filters', array(
-				'book_entries' => $book_entries,
-				'wp_current_user_id' => $wp_current_user_id,
-				'bookshelf_category' => $bookshelf_category
-			));
-		?>
-	</div>
-
-	<section class="bookshelf" id="bookshelf">
+		<?php } ?>
 		<div class="category-meta">
 			<?php 
 				// Apply Filters and Count
@@ -103,6 +96,9 @@
 				}
 			?>
 		</div>
+	</div>
+
+	<section class="bookshelf" id="bookshelf">
 		<?php 
 			if (empty($book_entries)) {
 				if ($bookshelf_category == 'nightstand') {

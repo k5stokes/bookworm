@@ -928,11 +928,11 @@ div.submit {
   padding: 10px;
   overflow: auto;
 }
-.header-wrapper #search_results {
+.bookshelf-heading-wrapper #search_results {
 	min-width: 320px;
 	border: none;
 }
-.header-wrapper #search_results.active {
+.bookshelf-heading-wrapper #search_results.active {
   border: 2px solid #7f7f7f;
 }
 	
@@ -1384,6 +1384,12 @@ div.submit {
 .bookshelf-filter {
 	margin-right: 5px;
 }
+.bookshelf-heading-wrapper h3 {
+  margin-bottom: 10px;
+}
+.bookshelf-filter-form {
+  margin-bottom: 10px;
+}
 .bookshelf-filter-form label {
   display: block;
   font-weight: 400;
@@ -1477,6 +1483,12 @@ div.submit {
   max-height: 1000px;
   padding: 10px;
   overflow: auto;
+}
+.bookshelf-search-form {
+  margin-bottom: 0;
+}
+section.bookshelf {
+  margin-top: 20px;
 }
 
 /* Community Page */

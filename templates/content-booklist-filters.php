@@ -31,6 +31,10 @@
 			echo '<option value="' . $tag->term_id . '">' . $tag->name . '</option>';
 		}
 ?>
+			<option value="current">Year-to-Date</option>
+			<option value="3">Past 3 Months</option>
+			<option value="6">Past 6 Months</option>
+			<option value="12">Past Year</option>
 		</select>
 	</div>
 	<?php }	?>
