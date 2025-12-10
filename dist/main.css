@@ -1387,6 +1387,9 @@ div.submit {
 .bookshelf-heading-wrapper h3 {
   margin-bottom: 10px;
 }
+.category-meta p {
+  margin-bottom: 0;
+}
 .bookshelf-filter-form {
   margin-bottom: 10px;
 }

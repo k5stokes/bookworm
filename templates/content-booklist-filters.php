@@ -30,11 +30,13 @@
 			// echo '<label><input type="checkbox" name="bookshelf_tag_filters[]" value="' . $tag->term_id . '">' . $tag->name . '</label>';
 			echo '<option value="' . $tag->term_id . '">' . $tag->name . '</option>';
 		}
+		if ($args['bookshelf_category'] != 'wishlist') {
 ?>
 			<option value="current">Year-to-Date</option>
-			<option value="3">Past 3 Months</option>
-			<option value="6">Past 6 Months</option>
-			<option value="12">Past Year</option>
+			<option value="P3M">Past 3 Months</option>
+			<option value="P6M">Past 6 Months</option>
+			<option value="P12M">Past Year</option>
+		<?php } ?>
 		</select>
 	</div>
 	<?php }	?>

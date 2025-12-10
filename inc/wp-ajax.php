@@ -576,6 +576,7 @@ function book_list() {
 	if ($bookshelf_category == 'nightstand') {
 		$book_entry_query = "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$wp_current_user_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01')";
 		$bookshelf_filtering = "id ";
+		$bookshelf_date_filter = "date_started";
 		 if (isset($_POST['bookshelf_sorting'])) {
 	    	$bookshelf_sorting_order = $_POST['bookshelf_sorting'];
 	    } else {
@@ -585,6 +586,7 @@ function book_list() {
 	} elseif ($bookshelf_category == 'finished') {
 		$book_entry_query = "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01'";
 		$bookshelf_filtering = "date_finished ";
+		$bookshelf_date_filter = "date_finished";
 		 if (isset($_POST['bookshelf_sorting'])) {
 	    	$bookshelf_sorting_order = $_POST['bookshelf_sorting'];
 	    } else {
@@ -603,6 +605,7 @@ function book_list() {
 	} elseif ($bookshelf_category == 'notes') {
 		$book_entry_query = "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND (notes IS NOT NULL AND notes != '' AND notes != 'Enter your notes for this book.')";
 		$bookshelf_filtering = "date_finished ";
+		$bookshelf_date_filter = "date_finished";
 		 if (isset($_POST['bookshelf_sorting'])) {
 	    	$bookshelf_sorting_order = $_POST['bookshelf_sorting'];
 	    } else {
@@ -612,13 +615,20 @@ function book_list() {
 	}
 			
     if ( isset($_POST['bookshelf_tag_filters']) && $_POST['bookshelf_tag_filters'] != '' && $_POST['bookshelf_tag_filters'] != NULL) {
-        // $bookshelf_tag_query = " AND tags IN (";
-        // $bookshelf_tag_query = " AND tags LIKE (";
-        // $bookshelf_tag_query .= implode(',', $_POST['bookshelf_tag_filters']);
         $bookshelf_tag_filters = $_POST['bookshelf_tag_filters'];
-        $bookshelf_tag_query = " AND FIND_IN_SET('$bookshelf_tag_filters', tags)";
-        //$bookshelf_tag_query .= ")";
-        $book_entry_query .= $bookshelf_tag_query;
+		if ($bookshelf_tag_filters != 'current' && $bookshelf_tag_filters != 'P3M' && $bookshelf_tag_filters != 'P6M' && $bookshelf_tag_filters != 'P12M') {
+			$bookshelf_tag_query = " AND FIND_IN_SET('$bookshelf_tag_filters', tags)";
+		} elseif ($bookshelf_tag_filters == 'P12M') {
+			$bookshelf_tag_query = " AND $bookshelf_date_filter > NOW() - INTERVAL 12 MONTH";
+		} elseif ($bookshelf_tag_filters == 'P6M') {
+			$bookshelf_tag_query = " AND $bookshelf_date_filter > NOW() - INTERVAL 6 MONTH";
+		} elseif ($bookshelf_tag_filters == 'P3M') {
+			$bookshelf_tag_query = " AND $bookshelf_date_filter > NOW() - INTERVAL 3 MONTH";
+		} elseif ($bookshelf_tag_filters == 'current') {
+			// Return entries finished within the current calendar year
+			$bookshelf_tag_query = " AND YEAR($bookshelf_date_filter) = YEAR(CURDATE())";
+		}
+		$book_entry_query .= $bookshelf_tag_query;
     }
 	
 	if (isset($_POST['bookshelf-sort-select']) && $_POST['bookshelf-sort-select'] != '' && $_POST['bookshelf-sort-select'] != NULL) {
