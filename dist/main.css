@@ -37,7 +37,7 @@ img, picture, video, canvas, svg {
   box-sizing: border-box;
 }
 main {
-  position: relative;
+  /* position: relative; */
   width: 100%;
   height: auto;
   padding: 110px 20px 100px;
@@ -791,6 +791,18 @@ a.button-alt {
     font-weight: 400;
     margin: 10px 0 20px;
 }
+a.button-secondary {
+  background: transparent;
+  color: #7478b9;
+  border: 2px solid #7f7f7f;
+  padding: 10px 30px;
+  border-radius: 20px;
+  font-weight: 700;
+  width: auto;
+  margin: 0 auto;
+  cursor: pointer;
+  text-decoration: none;
+}
 .delete-button-wrapper {
   text-align: center;
 }
@@ -1378,7 +1390,7 @@ div.submit {
 }
 .bookshelf-filter, select#bookshelf-sort-select {
 	/* width: 130px; */
-	height: 36px;
+	/* height: 36px; */
 	position: relative;
 }
 .bookshelf-filter {
@@ -1390,6 +1402,35 @@ div.submit {
 .category-meta p {
   margin-bottom: 0;
 }
+.book-filters-panel {
+  width: 300px;
+  max-width: 70%;
+  background: #fff;
+  position: absolute;
+  top: 100px;
+  right: 0;
+  height: 100%;
+    box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
+    display: block;
+    box-sizing: border-box;
+    padding: 25px 30px 10px 30px;
+}
+.book-filters-panel .bookshelf-filter {
+  margin-bottom: 20px;
+  margin-right: 0;
+}
+.book-filters-panel h4 {
+  margin-bottom: 10px;
+}
+.book-filters-panel .checkbox-filters-wrapper {
+  margin-bottom: 20px;
+}
+.book-filters-panel h5 {
+  margin-bottom: 5px;
+}
+.book-filters-panel label {
+  margin-bottom: 5px;
+}
 .bookshelf-filter-form {
   margin-bottom: 10px;
 }
@@ -1397,6 +1438,9 @@ div.submit {
   display: block;
   font-weight: 400;
   cursor: pointer;
+}
+.bookshelf-filter-form input[type="checkbox"] {
+  display: inline-block;
 }
 @media all and (max-width:630px) {
 	.bookshelf-filter-form {
