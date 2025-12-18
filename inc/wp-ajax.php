@@ -613,8 +613,9 @@ function book_list() {
 	    }
 		$bookshelf_sorting_query_part_default = $bookshelf_filtering . " " . $bookshelf_sorting_order;
 	}
-			
-    if ( isset($_POST['bookshelf_tag_filters']) && $_POST['bookshelf_tag_filters'] != '' && $_POST['bookshelf_tag_filters'] != NULL) {
+	
+	/* For a single data point set by a <select> element with 'bookshelf_tag_filters'
+    if (isset($_POST['bookshelf_tag_filters']) && $_POST['bookshelf_tag_filters'] != '' && $_POST['bookshelf_tag_filters'] != NULL) {
         $bookshelf_tag_filters = $_POST['bookshelf_tag_filters'];
 		if ($bookshelf_tag_filters != 'current' && $bookshelf_tag_filters != 'P3M' && $bookshelf_tag_filters != 'P6M' && $bookshelf_tag_filters != 'P12M') {
 			$bookshelf_tag_query = " AND FIND_IN_SET('$bookshelf_tag_filters', tags)";
@@ -630,7 +631,29 @@ function book_list() {
 		}
 		$book_entry_query .= $bookshelf_tag_query;
     }
-	
+	*/
+
+	/* For checkboxes with bookshelf_tag_filters as an array */
+	if (isset($_POST['bookshelf_tag_filters'])) {
+		$bookshelf_tag_filters = $_POST['bookshelf_tag_filters'];
+		for ($i = 0; $i < count($bookshelf_tag_filters); $i++) {
+			$tag_filter = $bookshelf_tag_filters[$i];
+			if ($tag_filter != 'current' && $tag_filter != 'P3M' && $tag_filter != 'P6M' && $tag_filter != 'P12M') {
+				$bookshelf_tag_query_part[] = " FIND_IN_SET('$tag_filter', tags) ";
+			} elseif ($tag_filter == 'P12M') {
+				$bookshelf_tag_query_part[] = " $bookshelf_date_filter > NOW() - INTERVAL 12 MONTH ";
+			} elseif ($tag_filter == 'P6M') {
+				$bookshelf_tag_query_part[] = " $bookshelf_date_filter > NOW() - INTERVAL 6 MONTH ";
+			} elseif ($tag_filter == 'P3M') {
+				$bookshelf_tag_query_part[] = " $bookshelf_date_filter > NOW() - INTERVAL 3 MONTH ";
+			} elseif ($tag_filter == 'current') {
+				// Return entries finished within the current calendar year
+				$bookshelf_tag_query_part[] = " YEAR($bookshelf_date_filter) = YEAR(CURDATE()) ";
+			}
+			$book_entry_query .= " AND (" . implode(" AND ", $bookshelf_tag_query_part) . ") ";
+		}
+	}
+
 	if (isset($_POST['bookshelf-sort-select']) && $_POST['bookshelf-sort-select'] != '' && $_POST['bookshelf-sort-select'] != NULL) {
 		$bookshelf_filter_by = $_POST['bookshelf-sort-select'];
         if ($bookshelf_filter_by == 'date_Started' || $bookshelf_filter_by == 'date_finished' || $bookshelf_filter_by == 'id') {
@@ -641,7 +664,18 @@ function book_list() {
 	    if (isset($_POST['bookshelf_sorting'])) {
 	    	$bookshelf_sorting_order = $_POST['bookshelf_sorting'];
 	    }
-		$book_entry_query .= " ORDER BY " . $bookshelf_filter_by . " " . $bookshelf_sorting_order;
+		if ($bookshelf_filter_by == 'author') {
+			$book_entry_query .= " ORDER BY SUBSTRING_INDEX(TRIM(" . $bookshelf_filter_by . "), ' ', -1)" . $bookshelf_sorting_order;
+		} else if ($bookshelf_filter_by == 'title') {
+			$book_entry_query .= " ORDER BY CASE
+				WHEN title LIKE 'The %' THEN SUBSTR(title, 5)
+				WHEN title LIKE 'A %' THEN SUBSTR(title, 3)
+				WHEN title LIKE 'An %' THEN SUBSTR(title, 4)
+				ELSE title
+			END" . ' ' . $bookshelf_sorting_order;
+		} else {
+			$book_entry_query .= " ORDER BY " . $bookshelf_filter_by . " " . $bookshelf_sorting_order;
+		}
 	} else {
 		$book_entry_query .= " ORDER BY " . $bookshelf_sorting_query_part_default;
 	}       
@@ -650,67 +684,76 @@ function book_list() {
 		    
     $book_entries = $wpdb->get_results($book_entry_query);
 
-    foreach ($book_entries as $book_entry) {
-        $book_entry_published_date = strtotime($book_entry->published_date);
-        $book_entry_published_date = date('j F Y',$book_entry_published_date);
-        $book_entry_title = stripslashes($book_entry->title);
-        $book_entry_notes = stripslashes($book_entry->notes);
-		$notes_word_count = str_word_count($book_entry_notes);
-		if ($book_entry->description != '') {
-			$book_entry_description = stripslashes($book_entry->description);
-			if (preg_match('/^.{1,120}\b/s', $book_entry_description, $match)) {
-			    $book_description_excerpt = $match[0] . "...";
+	if ($book_entries) {
+		foreach ($book_entries as $book_entry) {
+			$book_entry_published_date = strtotime($book_entry->published_date);
+			$book_entry_published_date = date('j F Y',$book_entry_published_date);
+			$book_entry_title = stripslashes($book_entry->title);
+			$book_entry_notes = stripslashes($book_entry->notes);
+			$notes_word_count = str_word_count($book_entry_notes);
+			if ($book_entry->description != '') {
+				$book_entry_description = stripslashes($book_entry->description);
+				if (preg_match('/^.{1,120}\b/s', $book_entry_description, $match)) {
+					$book_description_excerpt = $match[0] . "...";
+				}
 			}
-		}
 
-        echo '<div class="book-entry">';
-        echo '<div class="book-entry-meta">';
-        echo '<a class="book-entry-edit-link" href="/update-book/?id=' . $book_entry->id . '>">';
-        echo '<div class="book-entry-thumb">
-                <img class="book_entry_img" src="' . $book_entry->small_thumbnail_url . '">
-            </div>';
-        echo '<div class="book-entry-details">';
-        echo '<div id="book_entry_title" class="book-entry-title">' . $book_entry_title . '</div>';
-        echo '<div id="book_entry_author" class="book-entry-author">by ' . $book_entry->author . '</div>';
-        // echo '<div id="book_entry_pub_date" class="book-entry-publication-date">published ' . $book_entry_published_date . '</div>';
-        if ($book_entry->fiction_or_non != NULL && $book_entry->fiction_or_non != '') {
-            // echo '<div id="book_entry_genre" class="book-entry-genre">' . ucfirst($book_entry->fiction_or_non) . '</div>';
-        }
-        if ($book_entry->description != '') {
-			echo '<div id="book_entry_description" class="book_entry_description">' . $book_description_excerpt . '</div>';
-		} 
-		if ($book_entry->tags != NULL && $book_entry->tags != '' && !empty($book_entry->tags)) {
-			$tagsArray = explode(',', $book_entry->tags);
-			echo '<ul class="bookshelf-book-tags">';
-			foreach ($tagsArray as $tagID) {
-				$tag = get_tag($tagID);
-				echo '<li class="' . $tag->slug . ' active" data-id="' . $tag->term_id . '">' . $tag->name . '</li>';
+			echo '<div class="book-entry">';
+			echo '<div class="book-entry-meta">';
+			echo '<a class="book-entry-edit-link" href="/update-book/?id=' . $book_entry->id . '>">';
+			echo '<div class="book-entry-thumb">
+					<img class="book_entry_img" src="' . $book_entry->small_thumbnail_url . '">
+				</div>';
+			echo '<div class="book-entry-details">';
+			echo '<div id="book_entry_title" class="book-entry-title">' . $book_entry_title . '</div>';
+			echo '<div id="book_entry_author" class="book-entry-author">by ' . $book_entry->author . '</div>';
+			// echo '<div id="book_entry_pub_date" class="book-entry-publication-date">published ' . $book_entry_published_date . '</div>';
+			if ($book_entry->fiction_or_non != NULL && $book_entry->fiction_or_non != '') {
+				// echo '<div id="book_entry_genre" class="book-entry-genre">' . ucfirst($book_entry->fiction_or_non) . '</div>';
 			}
-		}
-        echo '</div>';
-        echo '</a>';
-        if ($bookshelf_category == 'notes') {
-	       	if ($notes_word_count > 40) {
-		       	$book_entry_notes_classes = 'book-entry-notes overage';
-		    } else {
-			    $book_entry_notes_classes = 'book-entry-notes';
-		    }
-        	echo '<div id="book_entry_notes" class="' . $book_entry_notes_classes . '">';
-        	echo '<a class="popup-trigger" href="#popup_notes_' . $book_entry->id . '">';
-        	echo '<strong>My Notes: </strong>' . $book_entry_notes;
+			if ($book_entry->description != '') {
+				echo '<div id="book_entry_description" class="book_entry_description">' . $book_description_excerpt . '</div>';
+			} 
+			if ($book_entry->tags != NULL && $book_entry->tags != '' && !empty($book_entry->tags)) {
+				$tagsArray = explode(',', $book_entry->tags);
+				echo '<ul class="bookshelf-book-tags">';
+				foreach ($tagsArray as $tagID) {
+					$tag = get_tag($tagID);
+					echo '<li class="' . $tag->slug . ' active" data-id="' . $tag->term_id . '">' . $tag->name . '</li>';
+				}
+			}
+			echo '</div>';
 			echo '</a>';
+			if ($bookshelf_category == 'notes') {
+				if ($notes_word_count > 40) {
+					$book_entry_notes_classes = 'book-entry-notes overage';
+				} else {
+					$book_entry_notes_classes = 'book-entry-notes';
+				}
+				echo '<div id="book_entry_notes" class="' . $book_entry_notes_classes . '">';
+				echo '<a class="popup-trigger" href="#popup_notes_' . $book_entry->id . '">';
+				echo '<strong>My Notes: </strong>' . $book_entry_notes;
+				echo '</a>';
+				echo '</div>';
+				echo '<div id="popup_notes_' . $book_entry->id . '" class="popup-wrapper popup-notes">';
+				echo '<div class="popup popup-large">';
+				echo '<a class="close-button popup-close" href="#"><img src="' . get_stylesheet_directory_uri() . '/img/icon_close.svg" alt="Close button" /></a>';
+				echo '<p><strong>My Notes: </strong>' . $book_entry_notes . '</p>';
+				echo '<p class="margin-bottom-0"><a href="/update-book/?id=' . $book_entry->id . '" class="popup-link">Edit</a></p>';
+				echo '</div>';
+			}
 			echo '</div>';
-			echo '<div id="popup_notes_' . $book_entry->id . '" class="popup-wrapper popup-notes">';
-			echo '<div class="popup popup-large">';
-			echo '<a class="close-button popup-close" href="#"><img src="' . get_stylesheet_directory_uri() . '/img/icon_close.svg" alt="Close button" /></a>';
-			echo '<p><strong>My Notes: </strong>' . $book_entry_notes . '</p>';
-			echo '<p class="margin-bottom-0"><a href="/update-book/?id=' . $book_entry->id . '" class="popup-link">Edit</a></p>';
+			
 			echo '</div>';
-        }
-        echo '</div>';
-        
-        echo '</div>';
-    }
+		}
+	} else {
+		echo '<div class="book-entry">';
+		echo '<div id="book_entry_description" class="book_entry_description">';
+		echo '<h4>No Results</h4>';
+		echo '<p>Sorry, no books match those criteria.</p>';
+		echo '</div>';
+		echo '</div>';
+	}
 	
     endif;
 

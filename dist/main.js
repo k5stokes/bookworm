@@ -1,4 +1,26 @@
 document.addEventListener('DOMContentLoaded', function () {
+	// Filters Toggle Button
+	let filtersToggleButton = document.querySelector('.filters-toggle-button');
+	let bookFiltersPanel = document.querySelector('.book-filters-panel');
+	let closeFiltersButton = document.querySelector('.filters-panel-close');
+	
+	if (filtersToggleButton && bookFiltersPanel) {
+		filtersToggleButton.addEventListener('click', function(e){
+			e.preventDefault();
+			let isExpanded = this.getAttribute('aria-expanded') === 'true';
+			this.setAttribute('aria-expanded', !isExpanded);
+			bookFiltersPanel.classList.toggle('active');
+		});
+	}
+	
+	if (closeFiltersButton && bookFiltersPanel) {
+		closeFiltersButton.addEventListener('click', function(e){
+			e.preventDefault();
+			bookFiltersPanel.classList.remove('active');
+			filtersToggleButton.setAttribute('aria-expanded', 'false');
+		});
+	}
+	
     function handleClickHold(el, timeout) {
         var timesUp = 0;
         let timeoutID;

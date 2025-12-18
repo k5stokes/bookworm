@@ -199,60 +199,47 @@
 		let resultsEl = jQuery('#search_results');
 		let searchClose = document.querySelector('.search-close');
 		
-		// let filterButton = document.querySelector('#filter_button');
-		// let filterWrapper = document.querySelector('#filter_wrapper');
-		// let filterItems = document.querySelectorAll('#filter_wrapper input');
+		let filterButton = document.querySelector('#filterButton');
+		//let filterItems = document.querySelectorAll('#filter_wrapper input');
 		
-		/* Checkboxes */
-		/*
+		/* Book Filtering with Checkboxes */
 		filterButton.addEventListener("click", function(event) {
 			event.preventDefault();
+			loadingAnimation.classList.add('active');
+			var formData = new FormData(bookFilterForm);
+			//formData.append("bookshelf_sorting", bookshelfSortingInput.value);
+			formData.append("action", "book_list");
 			
-			if (filterWrapper.classList.contains('active')) {
-				filterWrapper.classList.remove('active');
-			} else {
-				filterWrapper.classList.add('active');
-			}
+			fetch([bookwormAjax.url], {
+				method: "POST",
+				credentials: "same-origin",
+				body: formData
+			})
+			.then((response) => response.text())
+			.then((text) => {
+				console.log(text);
+				bookshelf.innerHTML = text;
+			})
+			.then((data) => {
+				if (data) {
+					console.log(data);
+					bookshelf.innerHTML = data;
+				}
+				loadingAnimation.classList.remove('active');
+				window.scrollTo({top: 0, behavior: 'smooth'});
+			})
+			.catch((error) => {
+				console.log("Error: ");
+				console.error(error);
+			});
 		});
 		
-		filterItems.forEach(function (filterItem, index) {
-			filterItem.addEventListener("change", function bookFilter() {
-				loadingAnimation.classList.add('active');
-				var formData = new FormData(bookFilterForm);
-				//formData.append("bookshelf_sorting", bookshelfSortingInput.value);
-				formData.append("action", "book_list");
-				
-				fetch([bookwormAjax.url], {
-					method: "POST",
-					credentials: "same-origin",
-					body: formData
-				})
-				.then((response) => response.text())
-				.then((text) => {
-					//console.log(text);
-					bookshelf.innerHTML = text;
-				})
-				.then((data) => {
-					if (data) {
-						//console.log(data);
-						bookshelf.innerHTML = data;
-					}
-					loadingAnimation.classList.remove('active');
-					window.scrollTo({top: 0, behavior: 'smooth'});
-				})
-				.catch((error) => {
-					console.log("Error: ");
-					console.error(error);
-				});
-			})	
-		})
-		*/
-		
+		/* Book Filtering with a select menu */
 		if (bookFilterSelect) {
 			bookFilterSelect.addEventListener("change", function bookFilter() {
 				loadingAnimation.classList.add('active');
 				var formData = new FormData(bookFilterForm);
-				//formData.append("bookshelf_sorting", bookshelfSortingInput.value);
+				formData.append("bookshelf_sorting", bookshelfSortingInput.value);
 				formData.append("action", "book_list");
 				
 				fetch([bookwormAjax.url], {
@@ -280,36 +267,40 @@
 			})
 		}
 
-		bookSortSelect.addEventListener('change', function(event) {
-			
-			loadingAnimation.classList.add('active');
-			var formData = new FormData(bookFilterForm);
-			
-			formData.append("action", "book_list");
-			
-			fetch([bookwormAjax.url], {
-				method: "POST",
-				credentials: "same-origin",
-				body: formData
+		if (bookSortSelect) {
+			/*
+			bookSortSelect.addEventListener('change', function(event) {
+				
+				loadingAnimation.classList.add('active');
+				var formData = new FormData(bookFilterForm);
+				
+				formData.append("action", "book_list");
+				
+				fetch([bookwormAjax.url], {
+					method: "POST",
+					credentials: "same-origin",
+					body: formData
+				})
+				.then((response) => response.text())
+				.then((text) => {
+					//console.log(text);
+					bookshelf.innerHTML = text;
+				})
+				.then((data) => {
+					if (data) {
+						//console.log(data);
+						bookshelf.innerHTML = data;
+					}
+					loadingAnimation.classList.remove('active');
+					window.scrollTo({top: 0, behavior: 'smooth'});
+				})
+				.catch((error) => {
+					console.log("Error: ");
+					console.error(error);
+				});
 			})
-			.then((response) => response.text())
-			.then((text) => {
-				//console.log(text);
-				bookshelf.innerHTML = text;
-			})
-			.then((data) => {
-				if (data) {
-					//console.log(data);
-					bookshelf.innerHTML = data;
-				}
-				loadingAnimation.classList.remove('active');
-				window.scrollTo({top: 0, behavior: 'smooth'});
-			})
-			.catch((error) => {
-				console.log("Error: ");
-				console.error(error);
-			});
-		})
+			*/
+		}
 
 		bookSortingButton.addEventListener('click', function(e){
 			//e.preventDefault();
@@ -320,7 +311,7 @@
 			}
 			loadingAnimation.classList.add('active');
 			var formData = new FormData(bookFilterForm);
-			//formData.append("bookshelf_sorting", bookshelfSortingInput.value);
+			formData.append("bookshelf_sorting", bookshelfSortingInput.value);
 			formData.append("action", "book_list");
 			
 			fetch([bookwormAjax.url], {

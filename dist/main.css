@@ -1388,6 +1388,9 @@ div.submit {
 		display: block;
 	}
 }
+a.filters-toggle-button.button-secondary {
+  margin: 0;
+}
 .bookshelf-filter, select#bookshelf-sort-select {
 	/* width: 130px; */
 	/* height: 36px; */
@@ -1408,12 +1411,16 @@ div.submit {
   background: #fff;
   position: absolute;
   top: 100px;
-  right: 0;
+  right: -300px;
   height: 100%;
-    box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
-    display: block;
-    box-sizing: border-box;
-    padding: 25px 30px 10px 30px;
+  box-shadow: 0px 0px 20px 0px rgba(0, 0, 0, 0.2);
+  display: block;
+  box-sizing: border-box;
+  padding: 25px 30px 10px 30px;
+  transition: right 0.2s ease-in-out;
+}
+.book-filters-panel.active {
+  right: 0;
 }
 .book-filters-panel .bookshelf-filter {
   margin-bottom: 20px;
