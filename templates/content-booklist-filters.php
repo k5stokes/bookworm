@@ -7,7 +7,38 @@
 </a>
 <div class="book-filters-panel">
 	<a class="close-button filters-panel-close" href="#"><img src="<?php echo get_stylesheet_directory_uri() . '/img/icon_close.svg'; ?>" alt="Close button" /></a>
-	<form id="book_filter_form" class="bookshelf-filter-form filters-wrapper">	
+	<form id="book_filter_form" class="bookshelf-filter-form filters-wrapper">
+		
+		<div class="bookshelf-filter sorter">
+			<h4>Sort By:</h4>
+			<div class="checkbox-filters-wrapper">
+				<div class="flex align-items-end">	
+					<div class="filter-button">
+						<label aria-hidden="false" style="display: none;" for="bookshelf-sort-select">Sort by:</label> 
+						<select id="bookshelf-sort-select" name="bookshelf-sort-select">
+							<option value="">Sort by:</option>
+							<?php if ($args['bookshelf_category'] == 'finished') { ?>
+								<option value="date_finished">Date finished</option>
+							<?php } else { ?>
+								<option value="id">Date added</option>
+							<?php } ?>
+							<option value="author">Author</option>
+							<option value="title">Title</option>
+							<?php if ($args['bookshelf_category'] != 'wishlist') { ?> <option value="date_started">Date started</option><?php } ?>
+						</select>
+					</div>
+					<div class="sort-button">
+						<div class="sort-button-icon-wrapper flex align-items-center">
+							<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_arrows.svg'); ?>
+						</div>
+					</div>
+					<input type="hidden" name="bookshelf_sorting" value="ASC" />
+					<input type="hidden" name="bookshelf_category" value="<?php echo $args['bookshelf_category']; ?>" />
+					<input type="hidden" name="wp_current_user_id" value="<?php echo $args['wp_current_user_id']; ?>" />
+				</div>
+			</div>
+		</div>
+
 		<?php 
 			$all_book_tags = array();
 			// Because this is a template part, we're passing $book_entries from the previous template as $args
@@ -48,7 +79,7 @@
 	?>
 			</div>
 	<?php
-			if ($args['bookshelf_category'] != 'wishlist') {
+			if ($args['bookshelf_category'] != 'wishlist' && $args['bookshelf_category'] != 'nightstand') {
 	?>
 			<div class="checkbox-filters-wrapper">
 				<h5>Date Read</h5>
@@ -67,36 +98,6 @@
 			<!-- </select> -->
 		</div>
 		<?php }	?>
-		
-		<div class="bookshelf-filter sorter">
-			<h4>Sort By:</h4>
-			<div class="checkbox-filters-wrapper">
-				<div class="flex align-items-end">	
-					<div class="filter-button">
-						<label aria-hidden="false" style="display: none;" for="bookshelf-sort-select">Sort by:</label> 
-						<select id="bookshelf-sort-select" name="bookshelf-sort-select">
-							<option value="">Sort by:</option>
-							<?php if ($args['bookshelf_category'] == 'finished') { ?>
-								<option value="date_finished">Date finished</option>
-							<?php } else { ?>
-								<option value="id">Date added</option>
-							<?php } ?>
-							<option value="author">Author</option>
-							<option value="title">Title</option>
-							<?php if ($args['bookshelf_category'] != 'wishlist') { ?> <option value="date_started">Date started</option><?php } ?>
-						</select>
-					</div>
-					<div class="sort-button">
-						<div class="sort-button-icon-wrapper flex align-items-center">
-							<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_arrows.svg'); ?>
-						</div>
-					</div>
-					<input type="hidden" name="bookshelf_sorting" value="ASC" />
-					<input type="hidden" name="bookshelf_category" value="<?php echo $args['bookshelf_category']; ?>" />
-					<input type="hidden" name="wp_current_user_id" value="<?php echo $args['wp_current_user_id']; ?>" />
-				</div>
-			</div>
-		</div>
-		<input id="filterButton" type="submit" class="button button-primary apply-filters-button" value="View Books" />
+		<input id="filterButton" type="submit" class="button button-primary apply-filters-button" value="Apply" />
 	</form>
 </div>

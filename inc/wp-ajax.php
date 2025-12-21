@@ -685,6 +685,8 @@ function book_list() {
     $book_entries = $wpdb->get_results($book_entry_query);
 
 	if ($book_entries) {
+		$book_count = count($book_entries);
+		echo "<h5 class='filtered-results-count'>Filtered Results: <strong>" . $book_count . "</strong></h5>";
 		foreach ($book_entries as $book_entry) {
 			$book_entry_published_date = strtotime($book_entry->published_date);
 			$book_entry_published_date = date('j F Y',$book_entry_published_date);

@@ -43,9 +43,11 @@
 	</div>
 	<div class="bookshelf-heading-wrapper flex justify-space-between align-items-center">
 		<?php
-			if ($bookshelf_category == 'wishlist' || $bookshelf_category == 'finished') {
+			if ($bookshelf_category == 'wishlist' || $bookshelf_category == 'finished' ||  $bookshelf_category == 'notes') {
 				if ($bookshelf_category == 'wishlist') {
 					$search_placeholder = 'Search Wishlist';
+				} else if ($bookshelf_category == 'notes') {
+					$search_placeholder = 'Search Notes';
 				} else {
 					$search_placeholder = 'Search Finished Books';
 				}
@@ -82,17 +84,17 @@
 				if ($date_query_field != '') {
 					$filterClosure = create_year_filter($date_query_field);
 					$countCurrentYear = count(array_filter($book_entries, $filterClosure));
-					echo "<p><span>Year-to-Date: <strong>" . $countCurrentYear . "</strong></span> &sdot; ";
+					echo "<p><span class='text'>Year-to-Date: <strong>" . $countCurrentYear . "</strong></span> <span class='dot'>&sdot;</span>";
 
 					$filterClosure = create_date_filter($date_query_field, 3);
 					$countThreeMonths = count(array_filter($book_entries, $filterClosure));
-					echo "<span>Past 3 Months: <strong>" . $countThreeMonths . "</strong></span> &sdot; ";
+					echo "<span class='text'>Past 3 Months: <strong>" . $countThreeMonths . "</strong></span> <span class='dot'>&sdot;</span>";
 					$filterClosure = create_date_filter($date_query_field, 6);
 					$countSixMonths = count(array_filter($book_entries, $filterClosure));
-					echo "<span>Past 6 Months: <strong>" . $countSixMonths . "</strong></span> &sdot; ";
+					echo "<span class='text'>Past 6 Months: <strong>" . $countSixMonths . "</strong></span> <span class='dot'>&sdot;</span>";
 					$filterClosure = create_date_filter($date_query_field, 12);
 					$countTwelveMonths = count(array_filter($book_entries, $filterClosure));
-					echo "<span>Past Year: <strong>" . $countTwelveMonths . "</strong></span></p>";
+					echo "<span class='text'>Past Year: <strong>" . $countTwelveMonths . "</strong></span></p>";
 				}
 			?>
 		</div>
