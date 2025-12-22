@@ -20,7 +20,229 @@ document.addEventListener('DOMContentLoaded', function () {
 			filtersToggleButton.setAttribute('aria-expanded', 'false');
 		});
 	}
+
+	let bookFilterForm = document.getElementById('book_filter_form');
+	let bookSortSelect = document.getElementById('bookshelf-sort-select');
+	let bookFilterSelect = document.getElementById('bookshelf_tag_filters');
+	let bookshelf = document.getElementById('bookshelf');
+	let loadingAnimation = document.querySelector('.loading-animation');
+	let bookSortingButton = document.querySelector('.sort-button');
+	let bookshelfSortingInput = document.querySelector('#book_filter_form input[name="bookshelf_sorting"]');
+	let searchEl = jQuery('#book_title');
+	let resultsEl = jQuery('#search_results');
+	let searchClose = document.querySelector('.search-close');
 	
+	let filterButton = document.querySelector('#filterButton');
+	//let filterItems = document.querySelectorAll('#filter_wrapper input');
+	
+	/* Book Filtering with Checkboxes */
+	if (filterButton) {
+		filterButton.addEventListener("click", function(event) {
+			event.preventDefault();
+			loadingAnimation.classList.add('active');
+			if (!bookFiltersPanel) {
+				let bookFiltersPanel = document.getElementById('book-filters-panel');
+				bookFiltersPanel.classList.toggle('active');
+			} else {
+				bookFiltersPanel.classList.remove('active');
+			}
+			
+
+			var formData = new FormData(bookFilterForm);
+			//formData.append("bookshelf_sorting", bookshelfSortingInput.value);
+			formData.append("action", "book_list");
+			
+			fetch([bookwormAjax.url], {
+				method: "POST",
+				credentials: "same-origin",
+				body: formData
+			})
+			.then((response) => response.text())
+			.then((text) => {
+				console.log(text);
+				bookshelf.innerHTML = text;
+			})
+			.then((data) => {
+				if (data) {
+					console.log(data);
+					bookshelf.innerHTML = data;
+				}
+				loadingAnimation.classList.remove('active');
+				window.scrollTo({top: 0, behavior: 'smooth'});
+			})
+			.catch((error) => {
+				console.log("Error: ");
+				console.error(error);
+			});
+		});
+	}
+	
+	/* Book Filtering with a select menu */
+	if (bookFilterSelect) {
+		bookFilterSelect.addEventListener("change", function bookFilter() {
+			loadingAnimation.classList.add('active');
+			var formData = new FormData(bookFilterForm);
+			formData.append("bookshelf_sorting", bookshelfSortingInput.value);
+			formData.append("action", "book_list");
+			
+			fetch([bookwormAjax.url], {
+				method: "POST",
+				credentials: "same-origin",
+				body: formData
+			})
+			.then((response) => response.text())
+			.then((text) => {
+				//console.log(text);
+				bookshelf.innerHTML = text;
+			})
+			.then((data) => {
+				if (data) {
+					//console.log(data);
+					bookshelf.innerHTML = data;
+				}
+				loadingAnimation.classList.remove('active');
+				window.scrollTo({top: 0, behavior: 'smooth'});
+			})
+			.catch((error) => {
+				console.log("Error: ");
+				console.error(error);
+			});
+		})
+	}
+
+	if (bookSortSelect) {
+		/*
+		bookSortSelect.addEventListener('change', function(event) {
+			
+			loadingAnimation.classList.add('active');
+			var formData = new FormData(bookFilterForm);
+			
+			formData.append("action", "book_list");
+			
+			fetch([bookwormAjax.url], {
+				method: "POST",
+				credentials: "same-origin",
+				body: formData
+			})
+			.then((response) => response.text())
+			.then((text) => {
+				//console.log(text);
+				bookshelf.innerHTML = text;
+			})
+			.then((data) => {
+				if (data) {
+					//console.log(data);
+					bookshelf.innerHTML = data;
+				}
+				loadingAnimation.classList.remove('active');
+				window.scrollTo({top: 0, behavior: 'smooth'});
+			})
+			.catch((error) => {
+				console.log("Error: ");
+				console.error(error);
+			});
+		})
+		*/
+	}
+
+	if (bookSortingButton) {
+		bookSortingButton.addEventListener('click', function(e){
+			//e.preventDefault();
+			if (bookshelfSortingInput.value == 'ASC') {
+				bookshelfSortingInput.value = 'DESC';
+			} else {
+				bookshelfSortingInput.value = 'ASC';
+			}
+			loadingAnimation.classList.add('active');
+			var formData = new FormData(bookFilterForm);
+			formData.append("bookshelf_sorting", bookshelfSortingInput.value);
+			formData.append("action", "book_list");
+			
+			fetch([bookwormAjax.url], {
+				method: "POST",
+				credentials: "same-origin",
+				body: formData
+			})
+			.then((response) => response.text())
+			.then((text) => {
+				//console.log(text);
+				bookshelf.innerHTML = text;
+			})
+			.then((data) => {
+				if (data) {
+					//console.log(data);
+					bookshelf.innerHTML = data;
+				}
+				loadingAnimation.classList.remove('active');
+				window.scrollTo({top: 0, behavior: 'smooth'});
+			})
+			.catch((error) => {
+				console.log("Error: ");
+				console.error(error);
+			});
+		})
+	}
+	
+	if (searchEl.length == 0) {
+		searchEl.on('input', function () {
+			jQuery('#search_results').addClass('active');
+			jQuery('.close-button').addClass('active');
+			jQuery.post(bookwormAjax.url, {
+				action: 'book_search',
+				nonce: bookwormAjax.bookworm_thinking_nonce,
+				data: {
+					s: jQuery(this).val(),
+					id: jQuery('#user_id_from').val()
+				}
+			}).done(function(data) {
+				resultsEl.html(data);
+				
+				// Loop through search result book links
+				var bookLinks = document.querySelectorAll('.book-search-entry-link');
+				
+				bookLinks.forEach(function (bookLink, index) {
+					var bwId = bookLink.dataset.bwid;
+					
+					bookLink.href = '/update-book/?id=' + bwId;
+				});
+			})
+		})
+	}
+	
+	if (searchClose) {
+		searchClose.addEventListener('click', function(e){
+			e.preventDefault();
+			searchClose.classList.remove('active');
+			jQuery('#search_results').removeClass('active');
+		})
+	}
+	
+	let popupClose = document.querySelectorAll('.popup-close');
+	let popupNotesTriggers = document.querySelectorAll('.popup-trigger');
+	
+	if (popupNotesTriggers.length > 0) {
+		popupNotesTriggers.forEach((popupNotesTrigger) => {
+			popupNotesTrigger.addEventListener('click', function(e) {
+				e.preventDefault();
+				
+				let popupId = e.target.getAttribute('href');
+				console.log('click ' + popupId);
+				document.querySelector(popupId).classList.add('active');
+			})
+		})
+	}
+
+	if (popupClose.length == 0) {
+		popupClose.forEach((popupCloser) => {
+			popupCloser.addEventListener('click', function(e){
+				e.preventDefault();
+				/*popupCloser.classList.remove('active');*/
+				e.target.closest('.popup-wrapper').classList.remove('active');
+			});
+		})
+	}
+	
+	// Handle click and hold on Bookshelf Nav Item
     function handleClickHold(el, timeout) {
         var timesUp = 0;
         let timeoutID;
