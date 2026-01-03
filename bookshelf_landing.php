@@ -79,7 +79,7 @@
 				<?php
 					} else {
 						// Apply Filters and Count
-						if ($date_query_field != '' && $bookshelf_category == 'finished') {
+						if ($date_query_field != '' && $bookshelf_category->title == 'Recently Finished') {
 							$filterClosure = create_year_filter($date_query_field);
 							$countCurrentYear = count(array_filter($book_entries, $filterClosure));
 							echo "<p>This Year: <strong>" . $countCurrentYear . "</strong></p>";
