@@ -1148,3 +1148,19 @@ function recommendations_list() {
 }
 add_action('wp_ajax_recommendations_list', 'recommendations_list');
 add_action('wp_ajax_nopriv_recommendations_list', 'recommendations_list');
+
+/*************************
+** Get Gemini Summary **
+*************************/
+function get_gemini_summary() {
+    check_ajax_referer('bookworm_thinking_nonce', 'nonce');
+
+    $user_id = get_current_user_id();
+    if (!$user_id) {
+        wp_send_json_error('User not logged in');
+    }
+
+    $summary = get_gemini_user_notes_summary($user_id);
+    wp_send_json_success($summary);
+}
+add_action('wp_ajax_get_gemini_summary', 'get_gemini_summary');

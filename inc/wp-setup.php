@@ -101,10 +101,6 @@ function get_gemini_user_notes_summary($user_id) {
 	if (!empty($user_content)) {
 		// You now have an array. To combine them for Gemini, use implode:
 		$combined_notes = implode("\n\n---\n\n", $user_content);
-		
-		echo "Successfully reviewed " . count($user_content) . " entries.";
-	} else {
-		echo "No notes found for this user.";
 	}
 
     // 2. Prepare the Gemini API Request
@@ -141,7 +137,8 @@ function get_gemini_user_notes_summary($user_id) {
     $data = json_decode($body, true);
 
     if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
-        return $data['candidates'][0]['content']['parts'][0]['text'];
+
+        return "<h5>Successfully reviewed " . count($user_content) . " entries.</h5><div class=\"ai-summary\"><h4 class=\"title\">Summary of your book notes:</h4><p>" .$data['candidates'][0]['content']['parts'][0]['text'];
     }
 
     // Debug: return the full response for troubleshooting
