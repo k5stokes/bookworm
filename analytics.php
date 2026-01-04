@@ -16,7 +16,11 @@
 	<style>
 		h5 {
 			font-size: 16px;
-			font-weight: 700;
+			font-weight: 500;
+			margin-bottom: 10px;
+		}
+		.tags-wrapper {
+			text-align: center;
 		}
 	</style>
 
@@ -27,61 +31,71 @@
 	<section>
 		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 			<div class="icon-background">
-				<?php //echo file_get_contents( get_stylesheet_directory() . '/img/friends.svg'); ?>
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/friends.svg'); ?>
 			</div>
-			<h4>Tags</h4>
+			<h4>By the Numbers</h4>
 		</div>
-		<div id="tagsList" class="">
+		<div id="tagsList" class="tags-list">
+			<h4 class='title'>Number of finished books in each category:</h4>
 			<?php
 				$all_book_tags = array();
 				$book_entries = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = '$wp_current_user_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' ORDER BY date_finished DESC");
 				foreach ($book_entries as $book_entry) {
-					echo '<br/>Book Entry ID: ' . $book_entry->id . ' — Tags: ' . htmlspecialchars($book_entry->tags);
 					if ($book_entry->tags != NULL && $book_entry->tags != '' && !empty($book_entry->tags)) {
 						$book_entry_tags = explode(',', $book_entry->tags);
-						$book_entry_tags = json_decode(stripslashes($book_entry->tags), true);
-						//print_r($book_entry_tags);
+						//$book_entry_tags = json_decode(stripslashes($book_entry->tags), true);
 						$all_book_tags = array_merge($all_book_tags, $book_entry_tags);
 					} 
 				}
 				if (!empty($all_book_tags)) {
 					$all_book_tags = array_unique($all_book_tags);
-					foreach ($all_book_tags as $tagID) {
-					$tag = get_tag($tagID);
 			?>
-				<div class="tag-entry">
-					<a href="/tag/<?php echo $tag->slug; ?>/"><?php echo $tag->name; ?></a>
-				</div>
+				<div class="tags-wrapper">
+					<ul>
+			<?php
+					foreach ($all_book_tags as $tagID) {
+						$tag = get_tag($tagID);
+						$book_count = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND FIND_IN_SET(%d, tags)", $wp_current_user_id, $tagID));
+
+			?>
+					<div class="tag-count-wrapper">
+						<li class="tag-entry active <?php echo $tag->slug; ?>" data-id="<?php echo $tag->slug; ?>"><?php echo $tag->name; ?></li>
+						<span class="book-count"><?php echo $book_count; ?></span>
+					</div>
 			<?php
 					}
+			?>
+					</ul>
+				</div>
+			<?php
 				}
 			?>
-				
-		</div> <!-- close grid -->
-	</section>
-	
-	<section class="grid gap-wide">
-		<div class="">
-			<h4>Add Friend</h4>
-			<p>Enter a friend's BookWorm Code here to connect with them on BookWorm.</p>
-			<form action="#" method="post" id="add_friend_form" name="add_friend_form">
-				<label for="enter_bookworm_code">Enter a BookWorm Code:</label>
-				<input name="enter_bookworm_code" id="enter_bookworm_code" type="text" value="">
-				<input name="current_user_id" id="current_user_id" type="hidden" value="<?php echo $wp_current_user_id; ?>">
-				<div id="validation_error" class="validation_error"><p>Please enter a BookWorm Code</p></div>
-				<div class="submit">
-					<input type="submit" name="add_friend_submit" id="add_friend_submit" class="button button-primary" value="Add Friend">
-				</div>
-			</form>
+		</div> <!-- close tags-list -->
+
+		<div id="timePeriodsList" class="time-periods-list">
+			<h4 class='title'>Number of finished books in each time period:</h4>
+			<div class="flex gap-20 text-center">
+			<?php
+				$date_query_field = 'date_finished';
+				$filterClosure = create_year_filter($date_query_field);
+				$countCurrentYear = count(array_filter($book_entries, $filterClosure));
+				echo "<div><h5>Year-to-Date</h5>
+				<div class='text'>" . $countCurrentYear . "</div></div>";
+
+				$filterClosure = create_date_filter($date_query_field, 3);
+				$countThreeMonths = count(array_filter($book_entries, $filterClosure));
+				echo "<div><h5>Past 3 Months</h5>
+				<div class='text'>" . $countThreeMonths . "</div></div>";
+				$filterClosure = create_date_filter($date_query_field, 6);
+				$countSixMonths = count(array_filter($book_entries, $filterClosure));
+				echo "<div><h5>Past 6 Months</h5>
+				<div class='text'>" . $countSixMonths . "</div></div>";
+				$filterClosure = create_date_filter($date_query_field, 12);
+				$countTwelveMonths = count(array_filter($book_entries, $filterClosure));
+				echo "<div><h5>Past Year</h5>
+				<div class='text'>" . $countTwelveMonths . "</div></div>";
+			?>
 		</div>
-		
-		<div class="">
-			<h4>Your BookWorm Code</h4>
-			<p>Share your BookWorm Code to connect with friends on BookWorm.</p>
-			<label>Your BookWorm Code:</label>
-			<div class="bookworm_code"><?php echo get_user_meta($wp_current_user_id, 'token_id', true); ?></div>
-		</div>
-		
 	</section>
 	
 	<section>
@@ -89,97 +103,20 @@
 			<div class="icon-background">
 				<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_recommend.svg'); ?>
 			</div>
-			<h4>Recommendations</h4>
+			<h4>AI Summary of Notes</h4>
 		</div>
-		<?php
-			$friend_query = "SELECT friend_id FROM {$wpdb->prefix}bookworm_friends WHERE user_id = '$wp_current_user_id' AND status = 'friends'";
-			$friends = $wpdb->get_results($friend_query);
-			
-			if (!$friends) { 
-				echo "<p>Become friends with someone on BookWorm first to give and receive recommendations.</p>";
-			} else {
-				$recommendations_query = "SELECT * FROM {$wpdb->prefix}bookworm_recommendations WHERE recipient_id = $wp_current_user_id ORDER BY id DESC";	
-				$recommendations = $wpdb->get_results($recommendations_query);
-				
-				if ($recommendations) {
-			
-					foreach ($recommendations as $recommendation) {
-						$recommender_id = $recommendation->recommender_id;
-						$recommender_user = get_user_by( 'id', $recommender_id  );
-						$recommender_avatar = get_avatar( $recommender_id, 96 );
-						
-						$friend_query = "SELECT * FROM {$wpdb->prefix}bookworm_friends WHERE user_id = '$wp_current_user_id' AND friend_id = '$recommender_id' AND status = 'friends'";
-						$friends = $wpdb->get_results($friend_query);
-					
-						if ($friends) {
-							// Check to see if the book already exists on their bookshelf
-							$google_books_ID = $recommendation->google_books_ID;
-							$recipient_id = $recommendation->recipient_id;
-						    //$recommender_user = get_user_by( 'id', $recommendation->recommender_id );
-						    
-						    $recommendation_note = false;
-							
-							$recommendation_query = "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_ID_shelf = '$recipient_id' AND google_books_ID = '$google_books_ID'";
-							$rec_book_entries = $wpdb->get_results($recommendation_query);
-							
-							$book_cover_query = "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE google_books_ID = '$google_books_ID'";
-							$book_cover_entries = $wpdb->get_results($book_cover_query);
-							
-							if (count($rec_book_entries) > 0) {
-								$recommendation_title_string = "<a href='/update-book/?id=" . $rec_book_entries[0]->id . "'>" . $rec_book_entries[0]->title . "</a>";
-							} else {
-								$recommendation_title_string = $recommendation->title;
-							}
-							if (isset($recommendation->recommendation_note) && $recommendation->recommendation_note != '' && $recommendation->recommendation_note != NULL && $recommendation->recommendation_note != 'Enter a note about your book recommendation.') {
-								$recommendation_note = true;
-							}
-				?>
-					<div class="recommendation">
-						<div class="recommendation-wrapper">
-						<div class="recommendation-row flex">
-							<?php if (count($book_cover_entries) > 0) { ?>
-								<div class="book-cover-image recommendation-image">
-									<img src="<?php echo $book_cover_entries[0]->small_thumbnail_url; ?>">
-								</div>
-							<?php } ?>
-							<div class="recommendation-message first">
-								<p><a href="/friend?id=<?php echo $recommender_id; ?>"><?php echo $recommender_user->user_login; ?></a> has recommended <?php echo $recommendation_title_string; ?> by <?php echo $recommendation->author; ?> to you!<?php if ($recommendation_note == true) { ?> They say:<?php } ?></p>
-							</div>
-						</div>
-				<?php
-						if ($recommendation_note == true) {
-				?>
-							<div class="recommendation-row flex align-items-center justify-space-between">
-								<div class="recommendation-message">
-									<span class="recommendation-note">"<?php echo stripslashes($recommendation->recommendation_note) ; ?>"</span>
-								</div>
-								<div class="recommender-avatar recommendation-image">
-									<div class="friend-avatar">
-										<div class="useravatar"><?php echo $recommender_avatar; ?></div>
-									</div>
-								</div>
-							</div>
-				<?php
-						}
-						if (count($rec_book_entries) > 0) {
-							$recommendation_close = $recommender_user->user_login . " has been added as a recommender for the book.";
-						} else {
-							$recommendation_close = "<a class='button button-primary' href='/add-book/?id=" . $recommendation->id . "'>Add to wishlist</a>";
-						}
-				?>
-						<div class="recommendation-row">
-							<div class="recommendation-message">
-								<?php echo $recommendation_close; ?>
-							</div>
-						</div>
-						</div> <!-- close recommendation wrapper -->
-					</div> <!-- close recommendation -->
-				<?php 
-					} // end if the rec comes from a friend
-				} // end if recommendations
-			} // end foreach
-		} // end if have friends
-		?>
+		<div class="gemini-ai-summary-wrapper">
+			<?php 
+				// Call Gemini via API in wp-setup.php
+				$summary = get_gemini_user_notes_summary($wp_current_user_id);
+
+				echo '<div class="ai-summary"><h4 class="title">Summary of your book notes:</h4>
+				<p>' . esc_html($summary) . '</p>
+				<p><em>Generated by Google Gemini</em></p>
+				</div>';
+			?>
+		</div>
+		
 	</section>
 	
 	<!--

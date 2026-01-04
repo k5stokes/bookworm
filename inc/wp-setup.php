@@ -85,3 +85,65 @@ add_action('init', function () {
 		}
 	}
 });
+
+/* Gemini */
+function get_gemini_user_notes_summary($user_id) {
+    global $wpdb;
+
+    // 1. Securely fetch the user's text from your custom table
+    // We use $wpdb->prepare to prevent SQL injection
+    $table_name = $wpdb->prefix . 'bookworm_books'; // Adjust to your table name
+    $user_content = $wpdb->get_col($wpdb->prepare(
+        "SELECT notes FROM $table_name WHERE user_id_shelf = %d",
+        $user_id
+    ));
+
+	if (!empty($user_content)) {
+		// You now have an array. To combine them for Gemini, use implode:
+		$combined_notes = implode("\n\n---\n\n", $user_content);
+		
+		echo "Successfully reviewed " . count($user_content) . " entries.";
+	} else {
+		echo "No notes found for this user.";
+	}
+
+    // 2. Prepare the Gemini API Request
+    $api_key = constant('GEMINI_API_KEY'); // Use a constant or environment variable
+    $model   = 'gemini-2.5-flash'; // Using the latest high-speed model
+    $url     = "https://generativelanguage.googleapis.com/v1/models/{$model}:generateContent?key={$api_key}";
+
+    // Construct the prompt
+    $prompt = "I am uploading some qualitative data. These notes are my responses to books I've read. They are short reviews. Considering only these notes, please generate a paragraph of about 100-150 words that summarizes my reading preferences, including what I don't like if evident from the data. Please make the paragraph objective and drawn only from the data I provide below. Please address me directly. Consider only the included data here:\n\n" . $combined_notes;
+
+    $body = [
+        'contents' => [
+            [
+                'parts' => [
+                    ['text' => $prompt]
+                ]
+            ]
+        ]
+    ];
+
+    // 3. Send the request via WordPress HTTP API
+    $response = wp_remote_post($url, [
+        'headers' => ['Content-Type' => 'application/json'],
+        'body'    => json_encode($body),
+        'timeout' => 30, // Summarization can take a few seconds
+    ]);
+
+    // 4. Handle Errors and Parse Response
+    if (is_wp_error($response)) {
+        return "API Error: " . $response->get_error_message();
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $data = json_decode($body, true);
+
+    if (isset($data['candidates'][0]['content']['parts'][0]['text'])) {
+        return $data['candidates'][0]['content']['parts'][0]['text'];
+    }
+
+    // Debug: return the full response for troubleshooting
+    return "Summary could not be generated. API Response: " . esc_html($body);
+}

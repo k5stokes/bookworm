@@ -71,6 +71,7 @@ main {
   }
   */
 }
+
 /* Typography */
 p, h1, h2, h3, h4, h5, h6 {
   overflow-wrap: break-word;
@@ -205,6 +206,9 @@ p a:hover, p a:visited:hover {
 }
 strong {
 	font-weight: 500;
+}
+.text-center {
+  text-align: center;
 }
 
 /* Login/Registration pages */
@@ -1679,6 +1683,21 @@ h2 {
 }
 .bookworm-recommended.active {
 	display: block;
+}
+
+/* Analytics */
+h4.title {
+    margin-bottom: 15px;
+}
+.tags-list {
+    width: 100%;
+    margin-bottom: 40px;
+    padding: 0 0 20px 0;
+    border-bottom: 1px solid #ccc;
+}
+.time-periods-list h5 {
+    padding: 5px 0;
+    font-weight: 500;
 }
 
 /* Notifications */
