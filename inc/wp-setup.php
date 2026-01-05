@@ -109,7 +109,11 @@ function get_gemini_user_notes_summary($user_id) {
     $url     = "https://generativelanguage.googleapis.com/v1/models/{$model}:generateContent?key={$api_key}";
 
     // Construct the prompt
-    $prompt = "I am uploading some qualitative data. These notes are my responses to books I've read. They are short reviews. Considering only these notes, please generate a paragraph of about 100-150 words that summarizes my reading preferences, including what I don't like if evident from the data. Please make the paragraph objective and drawn only from the data I provide below. Please address me directly. Consider only the included data here:\n\n" . $combined_notes;
+	$prompt_from_db = get_field('ai_notes_summaries_prompt', 'option');
+	if (empty($prompt_from_db)) {
+		$prompt_from_db = "I am uploading some qualitative data. These notes are my responses to books I've read. They are short reviews. Considering only these notes, please generate a paragraph of about 100-150 words that summarizes my reading preferences, including what I don't like if evident from the data. Please make the paragraph objective and drawn only from the data I provide below. Please address me directly. Consider only the included data here:";
+	}
+    $prompt = $prompt_from_db . "\n\n" . $combined_notes;
 
     $body = [
         'contents' => [
