@@ -92,7 +92,7 @@ function get_gemini_user_notes_summary($user_id) {
 
     // 1. Securely fetch the user's text from your custom table
     // We use $wpdb->prepare to prevent SQL injection
-    $table_name = $wpdb->prefix . 'bookworm_books'; // Adjust to your table name
+    $table_name = $wpdb->prefix . 'bookworm_books';
     $user_content = $wpdb->get_col($wpdb->prepare(
         "SELECT notes FROM $table_name WHERE user_id_shelf = %d",
         $user_id

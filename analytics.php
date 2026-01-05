@@ -34,6 +34,25 @@
 			color: #666;
 			max-width: 100%;
 		}
+		.book-chart {
+			position: relative;
+		}
+		.book-chart .chart-label {
+			position: absolute;
+			top: 75%;
+			box-sizing: border-box;
+			padding: 5px 7px;
+			border: 1px solid #ccc;
+			background: #fff;
+		}
+		.book-chart .chart-label.label-left {
+			left: 0;
+		}
+		.book-chart .chart-label.label-right {
+			right: 0;
+		}
+		.book-chart canvas {
+		}
 	</style>
 
 	<div class="bookshelf-heading-filter-wrapper flex justify-space-between align-items-center">
@@ -125,41 +144,128 @@
 				</div>
 			</div>
 		</div>
-		
 	</section>
-	
-	<!--
+
 	<section>
-		<h2>Book Clubs</h2>
-		<p>Coming soon!</p>
+		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
+			<div class="icon-background">
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_recommend.svg'); ?>
+			</div>
+			<h4>Book Characterizations</h4>
+		</div>
+
+		<h5>Mood</h5>
+		<div class="book-chart flex">
+			<div class="chart-label label-left">Funny</div>
+			<canvas id="rating_mood"></canvas>
+			<div class="chart-label label-right">Tragic</div>
+		</div>
+		<h5>Language</h5>
+		<div class="book-chart flex">
+			<div class="chart-label label-left">Dense</div>
+			<canvas id="rating_language"></canvas>
+			<div class="chart-label label-right">Accessible</div>
+		</div>
+		<h5>Romance</h5>
+		<div class="book-chart flex">
+			<div class="chart-label label-left">Not at All</div>
+			<canvas id="rating_romance"></canvas>
+			<div class="chart-label label-right">Chock Full</div>
+		</div>
+		<h5>Suspension of Disbelief</h5>
+		<div class="book-chart flex">
+			<div class="chart-label label-left">Entirely Speculative</div>
+			<canvas id="rating_suspension_disbelief"></canvas>
+			<div class="chart-label label-right">Easily Realist</div>
+		</div>
 	</section>
-	-->
-	
-	<?php // get_template_part('templates/content', 'side-nav'); ?>
 
 </main>
 </div> <!-- close wrapper -->
 
 <?php get_template_part('templates/content', 'footer-nav'); ?>
 
-<div id="popup" class="popup-wrapper">
-	<div class="popup popup-large">
-		<a class="close-button popup-close" href="#"><img src="<?php echo get_stylesheet_directory_uri() . '/img/icon_close.svg'; ?>" alt="Close button" /></a>
-		<div id="popupContainer"></div>
-		<p><a id="close-popup" href="#" class="popup-link popup-close">Add Another Friend?</a></p>
-	</div>
-</div>
-
-<div class="loading-animation">
-	<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><circle cx="4" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce0" attributeName="cy" begin="0;svgSpinners3DotsBounce1.end+0.25s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.1s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="20" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce1" attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.2s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle></svg>
-</div>
-
 <script type="text/javascript">
 	document.addEventListener('DOMContentLoaded', function () {
-		let loadingAnimation = document.querySelector('.loading-animation');
-		let popupNextStep = document.querySelector('#popup');
 		let validationError = document.getElementById('validation_error');
 
+		// Draw us some charts
+		<?php
+			$ratingArray = array('rating_mood' => 'Mood', 'rating_language' => 'Language', 'rating_romance' => 'Romance', 'rating_suspension_disbelief' => 'Suspension of Disbelief');
+
+			foreach ($ratingArray as $rating => $label) {
+				$rating_data = $wpdb->get_col($wpdb->prepare(
+					"SELECT $rating FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01'",
+					$wp_current_user_id
+				));
+				if ($rating == 'rating_mood') {
+					$bg_color = 'rgba(219, 99, 255, 1)';
+				} else if ($rating == 'rating_language') {
+					$bg_color = 'rgba(99, 255, 187, 1)';
+				} else if ($rating == 'rating_romance') {
+					$bg_color = 'rgb(255, 99, 132)';
+				} else if ($rating == 'rating_suspension_disbelief') {
+					$bg_color = 'rgba(99, 167, 255, 1)';
+				}
+		?>
+				var rating_data = <?php echo json_encode($rating_data); ?>;
+
+				var frequencyMap = rating_data.reduce((accumulator, currentValue) => {
+					// If the current number is already a key in the accumulator object, increment its count.
+					// Otherwise, initialize its count to 1.
+					accumulator[currentValue] = (accumulator[currentValue] || 0) + 1;
+					return accumulator;
+				}, {}); // The second argument {} is the initial value of the accumulator (an empty object).
+
+				var data = {
+					datasets: [{
+						label: '<?php echo $label; ?>',
+						data: Object.entries(frequencyMap).map(([key, value]) => ({
+							x: parseInt(key),
+							y: 0,
+							r: value
+						})),
+						backgroundColor: '<?php echo $bg_color; ?>'
+					}]
+				};
+
+				var bookChart = new Chart(
+					document.getElementById('<?php echo $rating; ?>'),
+					{
+						type: 'bubble',
+						data: data,
+						options: {
+							scales: {
+								x: { // X-axis configuration
+									type: 'linear', // Essential for numerical ranges
+									position: 'bottom',
+									suggestedMax: 5,
+									suggestedMin: 1,
+									ticks: {
+										stepSize: 1, // Forces the ticks to be 1, 2, 3, etc.
+										// or use precision: 0 as an alternative:
+										// precision: 0 
+									}
+								},
+								y: { // Y-axis configuration
+									type: 'linear', // Essential for numerical ranges
+									max: 0.25,
+									min: -0.25,
+									ticks: {
+										display: false // This hides the numbers on the y-axis
+									},
+									// Optionally, you can also hide the grid lines or the axis line itself
+									grid: {
+										display: false // This hides the grid lines for the y-axis
+									}
+								}
+							}
+						}
+					}
+				);
+		<?php
+			} // end foreach
+		?>
 		// Load Gemini summary
 		fetchGeminiSummary();
 

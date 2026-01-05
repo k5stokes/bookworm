@@ -23,6 +23,7 @@
 		<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
 		<script src="<?php echo get_stylesheet_directory_uri(); ?>/dist/air-datepicker/air-datepicker.js"></script>
+
 		<link rel="stylesheet" href="<?php echo get_stylesheet_directory_uri(); ?>/dist/air-datepicker/air-datepicker.css">
         <?php wp_head(); ?>
     </head>
