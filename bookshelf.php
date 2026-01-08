@@ -85,7 +85,6 @@
 					$filterClosure = create_year_filter($date_query_field);
 					$countCurrentYear = count(array_filter($book_entries, $filterClosure));
 					echo "<p><span class='text'>Year-to-Date: <strong>" . $countCurrentYear . "</strong></span> <span class='dot'>&sdot;</span>";
-
 					$filterClosure = create_date_filter($date_query_field, 3);
 					$countThreeMonths = count(array_filter($book_entries, $filterClosure));
 					echo "<span class='text'>Past 3 Months: <strong>" . $countThreeMonths . "</strong></span> <span class='dot'>&sdot;</span>";

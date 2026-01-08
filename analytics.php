@@ -53,10 +53,44 @@
 		}
 		.book-chart canvas {
 		}
+		.date-input-wrapper {
+			position: relative;
+			width: 150px;
+		}
+		.date-input-wrapper .input-icon {
+			position: absolute;
+			right: 10px;
+			top: 63%;
+			transform: translateY(-50%);
+			width: auto;
+			height: 40px;
+			pointer-events: none;
+		}
 	</style>
 
 	<div class="bookshelf-heading-filter-wrapper flex justify-space-between align-items-center">
 		<h3><?php echo get_the_title(); ?></h3>
+		<div class="date-range-selector">
+			<h5>Choose Date Range for Analytics</h5>
+			<select>
+				<option value="current">Year-to-Date</option>
+				<option value="P3M">Past 3 Months</option>
+				<option value="P6M">Past 6 Months</option>
+				<option value="P12M">Past Year</option>
+			</select>
+			<div class="flex">
+				<div class="date-input-wrapper">
+					<label for="start_date">Start Date Range</label>
+					<input id="start_date" class="calendar-ui" name="start_date" type="text" value="">
+					<img class="input-icon" src="<?php echo get_stylesheet_directory_uri() . '/img/icon_calendar3.png'; ?>" alt="Calendar icon" />
+				</div>
+				<div class="date-input-wrapper">
+					<label for="end_date">End Date Range</label>
+					<input id="end_date" class="calendar-ui" name="end_date" type="text" value="">
+					<img class="input-icon" src="<?php echo get_stylesheet_directory_uri() . '/img/icon_calendar3.png'; ?>" alt="Calendar icon" />
+				</div>
+			</div>
+		</div>
 	</div>
 	
 	<section>
@@ -189,6 +223,29 @@
 	document.addEventListener('DOMContentLoaded', function () {
 		let validationError = document.getElementById('validation_error');
 
+		let startDate = document.getElementById('start_date');
+		new AirDatepicker(startDate, {
+			isMobile: true,
+    		autoClose: true,
+			buttons: ['clear'],
+			onSelect: (date) => {
+				const formattedDate = date.formattedDate; // Access formatted date string
+				console.log(formattedDate);
+				startReadingDate.value = formattedDate;
+			}
+		})
+
+		let endDate = document.getElementById('end_date');
+		new AirDatepicker(endDate, {
+			isMobile: true,
+    		autoClose: true,
+			buttons: ['clear'],
+			onSelect: (date) => {
+				const formattedDate = date.formattedDate; // Access formatted date string
+				finishedReadingDate.value = formattedDate;
+			}
+		})
+
 		// Draw us some charts
 		<?php
 			$ratingArray = array('rating_mood' => 'Mood', 'rating_language' => 'Language', 'rating_romance' => 'Romance', 'rating_suspension_disbelief' => 'Suspension of Disbelief');
@@ -267,7 +324,7 @@
 			} // end foreach
 		?>
 		// Load Gemini summary
-		fetchGeminiSummary();
+		//fetchGeminiSummary();
 
 		function fetchGeminiSummary() {
 			fetch(bookwormAjax.url, {
