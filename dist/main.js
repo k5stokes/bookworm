@@ -46,8 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
 			} else {
 				bookFiltersPanel.classList.remove('active');
 			}
-			
-
+	
 			var formData = new FormData(bookFilterForm);
 			//formData.append("bookshelf_sorting", bookshelfSortingInput.value);
 			formData.append("action", "book_list");

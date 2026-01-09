@@ -124,8 +124,23 @@ p a:hover, p a:visited:hover {
 p.small {
   font-size: 12px;
 }
+input::placeholder {
+  color: #666;
+}
 
 /* Utility */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    border: 0;
+    padding: 0;
+    white-space: nowrap;
+    clip-path: inset(100%);
+    clip: rect(0 0 0 0); /* Older browsers */
+    overflow: hidden;
+}
 .flex {
   display: flex;
 }
@@ -158,6 +173,9 @@ p.small {
 }
 .flex.gap-20 {
 	gap: 20px;
+}
+.flex.align-end {
+  align-items: end;
 }
 .full-width { 
    	width: calc(100% + 100px);

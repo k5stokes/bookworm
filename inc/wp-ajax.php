@@ -764,6 +764,95 @@ function book_list() {
 add_action('wp_ajax_book_list', 'book_list');
 add_action('wp_ajax_nopriv_book_list', 'book_list');
 
+/* Book Analytics Query */
+function book_analytics_query() {
+	global $wpdb;
+    $wpdb->show_errors();
+
+    if (!isset($_POST['bookshelf_start_date']) || !isset($_POST['bookshelf_end_date'])) :
+        echo "No bookshelf date range :(";
+    else :
+
+    $bookshelf_start_date = $_POST['bookshelf_start_date'];
+	$bookshelf_end_date = $_POST['bookshelf_end_date'];
+	$bookshelf_date_range = $_POST['bookshelf_date_range'];
+    $wp_current_user_id = $_POST['wp_current_user_id'];
+
+	$table_name = $wpdb->prefix . 'bookworm_books';
+    $book_entries = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $table_name WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s",
+        $wp_current_user_id,
+		$bookshelf_start_date,
+		$bookshelf_end_date
+    ));
+	
+	echo count($book_entries);
+
+	endif;
+	
+	die();
+}
+add_action('wp_ajax_book_analytics_query', 'book_analytics_query');
+add_action('wp_ajax_nopriv_book_analytics_query', 'book_analytics_query');
+
+/* Book Analytics Tags Query */
+function book_analytics_tags_query() {
+	global $wpdb;
+    $wpdb->show_errors();
+
+    if (!isset($_POST['bookshelf_start_date']) || !isset($_POST['bookshelf_end_date'])) :
+        echo "No bookshelf date range :(";
+    else :
+
+    $bookshelf_start_date = $_POST['bookshelf_start_date'];
+	$bookshelf_end_date = $_POST['bookshelf_end_date'];
+	$bookshelf_date_range = $_POST['bookshelf_date_range'];
+    $wp_current_user_id = $_POST['wp_current_user_id'];
+	$all_book_tags = array();
+
+	$table_name = $wpdb->prefix . 'bookworm_books';
+	$book_entries = $wpdb->get_results($wpdb->prepare(
+		"SELECT * FROM $table_name WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s",
+		$wp_current_user_id,
+		$bookshelf_start_date,
+		$bookshelf_end_date
+	));
+
+	foreach ($book_entries as $book_entry) {
+		if ($book_entry->tags != NULL && $book_entry->tags != '' && !empty($book_entry->tags)) {
+			$book_entry_tags = explode(',', $book_entry->tags);
+			//$book_entry_tags = json_decode(stripslashes($book_entry->tags), true);
+			$all_book_tags = array_merge($all_book_tags, $book_entry_tags);
+		} 
+	}
+
+	if (!empty($all_book_tags)) {
+		$all_book_tags = array_unique($all_book_tags);
+		$output = '';
+
+		foreach ($all_book_tags as $tagID) {
+			$tag = get_tag($tagID);
+			$book_count = $wpdb->get_var($wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s AND FIND_IN_SET(%d, tags)",
+				$wp_current_user_id,
+				$bookshelf_start_date,
+				$bookshelf_end_date,
+				$tagID
+			));
+
+			$output .= '<div class="tag-count-wrapper">';
+			$output .= '<li class="tag-entry active ' . $tag->slug . '" data-id="' . $tag->slug . '">' . $tag->name . '</li>';
+			$output .= '<span class="book-count">' . $book_count . '</span>';
+			$output .= '</div>';
+		}
+		echo $output;
+	}
+	endif;
+	die();
+}
+add_action('wp_ajax_book_analytics_tags_query', 'book_analytics_tags_query');
+add_action('wp_ajax_nopriv_book_analytics_tags_query', 'book_analytics_tags_query');
+
 /***************
 ** Add Friend **
 ***************/
@@ -1160,7 +1249,18 @@ function get_gemini_summary() {
         wp_send_json_error('User not logged in');
     }
 
-    $summary = get_gemini_user_notes_summary($user_id);
+	// Read optional date range parameters sent from the analytics page
+	$bookshelf_start_date = isset($_POST['bookshelf_start_date']) ? sanitize_text_field($_POST['bookshelf_start_date']) : null;
+	$bookshelf_end_date = isset($_POST['bookshelf_end_date']) ? sanitize_text_field($_POST['bookshelf_end_date']) : null;
+	$bookshelf_date_range = isset($_POST['bookshelf_date_range']) ? sanitize_text_field($_POST['bookshelf_date_range']) : null;
+
+	$date_range_query = [
+		'start_date' => $bookshelf_start_date,
+		'end_date' => $bookshelf_end_date,
+		'range' => $bookshelf_date_range,
+	];
+
+	$summary = get_gemini_user_notes_summary($user_id, $date_range_query);
     wp_send_json_success($summary);
 }
 add_action('wp_ajax_get_gemini_summary', 'get_gemini_summary');

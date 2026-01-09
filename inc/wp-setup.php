@@ -87,8 +87,14 @@ add_action('init', function () {
 });
 
 /* Gemini */
-function get_gemini_user_notes_summary($user_id) {
+function get_gemini_user_notes_summary($user_id, $date_range_query) {
     global $wpdb;
+
+	// normalize incoming date range data
+	$start_date = null;
+	$end_date   = null;
+
+	
 
     // 1. Securely fetch the user's text from your custom table
     // We use $wpdb->prepare to prevent SQL injection
