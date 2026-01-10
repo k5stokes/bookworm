@@ -45,6 +45,11 @@
 			border: 1px solid #ccc;
 			background: #fff;
 		}
+		@media all and (max-width: 630px) {
+			.book-chart .chart-label {
+				top: 60%;
+			}
+		}
 		.book-chart .chart-label.label-left {
 			left: 0;
 		}
@@ -71,6 +76,7 @@
 		}
 		h4.analytics-date-range-label {
 			font-style: italic;
+			max-width: 200px;
 		}
 		.date-range-selector h5 {
 			margin-bottom: 5px;
@@ -93,6 +99,35 @@
 		}
 		.analytics .bookshelf-heading-filter-wrapper {
 			margin-bottom: 10px;
+		}
+		.analytics #analytics_tags .tag-count-wrapper {
+			margin-bottom: 20px;
+		}
+		@media all and (max-width: 820px) {
+			.analytics .bookshelf-heading-filter-wrapper {
+				flex-direction: column;
+				align-items: flex-start;
+				gap: 15px;
+			}
+		}
+		@media all and (max-width: 630px) {
+			#book_analytics_form > .flex {
+				flex-direction: column;
+			}
+			#dateRangeButton {
+				margin: 0 0 10px;
+			}
+		}
+		@media all and (max-width: 480px) {
+			#analytics_tags {
+				flex-direction: column;
+			}
+			#analytics_tags li.tag-entry {
+				display: inline-block;
+			}
+			#analytics_tags .book-count {
+				display: block;
+			}
 		}
 	</style>
 
@@ -271,7 +306,7 @@
 		<div class="book-chart flex">
 			<div class="chart-label label-left">Entirely Speculative</div>
 			<canvas id="rating_suspension_disbelief"></canvas>
-			<div class="chart-label label-right">Easily Realist</div>
+			<div class="chart-label label-right">Entirely Realist</div>
 		</div>
 	</section>
 
@@ -319,93 +354,118 @@
 			}
 		})
 
+		// Put the date vars in JS
+		let bookshelf_start_date = '<?php echo $bookshelf_start_date->format('Y-m-d'); ?>';
+		let bookshelf_end_date = '<?php echo $bookshelf_end_date->format('Y-m-d'); ?>';
+
+		// Load Gemini summary
+		fetchGeminiSummary(bookshelf_start_date, bookshelf_end_date);
+
 		// Draw us some charts
-		<?php
-			$ratingArray = array('rating_mood' => 'Mood', 'rating_language' => 'Language', 'rating_romance' => 'Romance', 'rating_suspension_disbelief' => 'Suspension of Disbelief');
+		drawRatingsCharts(bookshelf_start_date, bookshelf_end_date);
 
-			foreach ($ratingArray as $rating => $label) {
-				
-				$rating_data = $wpdb->get_col($wpdb->prepare(
-					"SELECT $rating FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01'",
-					$wp_current_user_id
-				));
+		// Ratings Charts function
+		function drawRatingsCharts(startVal, endVal) {
+			let bookAnalyticsForm = document.querySelector('#book_analytics_form');
+			var formData = new FormData(bookAnalyticsForm);
 
-				if ($rating == 'rating_mood') {
-					$bg_color = 'rgba(219, 99, 255, 1)';
-				} else if ($rating == 'rating_language') {
-					$bg_color = 'rgba(99, 255, 187, 1)';
-				} else if ($rating == 'rating_romance') {
-					$bg_color = 'rgb(255, 99, 132)';
-				} else if ($rating == 'rating_suspension_disbelief') {
-					$bg_color = 'rgba(99, 167, 255, 1)';
-				}
-		?>
-				var rating_data = <?php echo json_encode($rating_data); ?>;
+			if (startVal && endVal) {
+				// Override the date values with passed parameters
+				formData.set("bookshelf_start_date", startVal);
+				formData.set("bookshelf_end_date", endVal);
+			}
 
-				var frequencyMap = rating_data.reduce((accumulator, currentValue) => {
-					// If the current number is already a key in the accumulator object, increment its count.
-					// Otherwise, initialize its count to 1.
-					accumulator[currentValue] = (accumulator[currentValue] || 0) + 1;
-					return accumulator;
-				}, {}); // The second argument {} is the initial value of the accumulator (an empty object).
+			formData.append("action", "book_analytics_ratings_query");
 
-				var data = {
-					datasets: [{
-						label: '<?php echo $label; ?>',
-						data: Object.entries(frequencyMap).map(([key, value]) => ({
-							x: parseInt(key),
-							y: 0,
-							r: value
-						})),
-						backgroundColor: '<?php echo $bg_color; ?>'
-					}]
-				};
+			fetch([bookwormAjax.url], {
+				method: "POST",
+				credentials: "same-origin",
+				body: formData
+			})
+			.then(r => r.json())
+			.then(data => {
+				data.data.forEach(item => {
+					console.log(item.label, item.rating, item.data, item.bg_color);
 
-				var bookChart = new Chart(
-					document.getElementById('<?php echo $rating; ?>'),
-					{
-						type: 'bubble',
-						data: data,
-						options: {
-							scales: {
-								x: { // X-axis configuration
-									type: 'linear', // Essential for numerical ranges
-									position: 'bottom',
-									suggestedMax: 5,
-									suggestedMin: 1,
-									ticks: {
-										stepSize: 1, // Forces the ticks to be 1, 2, 3, etc.
-										// or use precision: 0 as an alternative:
-										// precision: 0 
+					var frequencyMap = item.data.reduce((accumulator, currentValue) => {
+						// If the current number is already a key in the accumulator object, increment its count.
+						// Otherwise, initialize its count to 1.
+						accumulator[currentValue] = (accumulator[currentValue] || 0) + 1;
+						return accumulator;
+					}, {}); // The second argument {} is the initial value of the accumulator (an empty object).
+
+					var data = {
+						datasets: [{
+							label: item.label,
+							data: Object.entries(frequencyMap).map(([key, value]) => ({
+								x: parseInt(key),
+								y: 0,
+								r: value
+							})),
+							backgroundColor: item.bg_color
+						}]
+					};
+
+					// 1. Find the existing chart instance using the canvas ID
+					const existingChart = Chart.getChart(item.rating);
+
+					// 2. If it exists, destroy it
+					if (existingChart) {
+						existingChart.destroy();
+					}
+
+					var bookChart = new Chart(
+						document.getElementById(item.rating),
+						{
+							type: 'bubble',
+							data: data,
+							options: {
+								plugins: {
+									tooltip: {
+										callbacks: {
+											label: function(context) {
+												return 'Count: ' + context.raw.r + ' of ' + item.data.length;
+											}
+										}
 									}
 								},
-								y: { // Y-axis configuration
-									type: 'linear', // Essential for numerical ranges
-									max: 0.25,
-									min: -0.25,
-									ticks: {
-										display: false // This hides the numbers on the y-axis
+								scales: {
+									x: { // X-axis configuration
+										type: 'linear', // Essential for numerical ranges
+										position: 'bottom',
+										suggestedMax: 5,
+										suggestedMin: 1,
+										ticks: {
+											stepSize: 1, // Forces the ticks to be 1, 2, 3, etc.
+											// or use precision: 0 as an alternative:
+											// precision: 0 
+										}
 									},
-									// Optionally, you can also hide the grid lines or the axis line itself
-									grid: {
-										display: false // This hides the grid lines for the y-axis
+									y: { // Y-axis configuration
+										type: 'linear', // Essential for numerical ranges
+										suggestedMax: 10,
+										suggestedMin: -10,
+										ticks: {
+											display: false // This hides the numbers on the y-axis
+										},
+										grid: {
+											display: false // This hides the grid lines for the y-axis
+										}
 									}
 								}
 							}
 						}
-					}
-				);
-		<?php
-			} // end foreach
-		?>
+					);
+				});
+			})
+			.catch((error) => {
+				console.log("Error: ");
+				console.error(error);
+			});
+		} // End drawRatingsCharts
 
-		// Load Gemini summary
-		let bookshelf_start_date = '<?php echo $bookshelf_start_date->format('Y-m-d'); ?>';
-		let bookshelf_end_date = '<?php echo $bookshelf_end_date->format('Y-m-d'); ?>';
-		fetchGeminiSummary(bookshelf_start_date, bookshelf_end_date);
-
+		// Gemini Summary fetch
 		function fetchGeminiSummary(startVal, endVal, rangeVal) {
-
 			fetch(bookwormAjax.url, {
 				method: 'POST',
 				headers: {
@@ -422,8 +482,6 @@
 			.then(response => response.json())
 			.then(data => {
 				const summaryContent = document.getElementById('gemini-summary-content');
-				console.log(startVal);
-				console.log(endVal);
 				if (data.success) {
 					summaryContent.innerHTML = data.data + '</p><p class="small"><em>Summary generated by Google Gemini</em></p></div>';
 					console.log(data.data);
@@ -432,8 +490,6 @@
 				}
 			})
 			.catch(error => {
-				console.log(startVal);
-				console.log(endVal);
 				const summaryContent = document.getElementById('gemini-summary-content');
 				summaryContent.innerHTML = '<div class="ai-summary"><p>Error loading summary.</p></div>';
 				console.error('Error:', error);
@@ -446,11 +502,61 @@
 		let dateRangeButton = document.querySelector('#dateRangeButton');
 		let numberBooksFinished = document.querySelector('#number_books_finished');
 		let analyticsTags = document.querySelector('#analytics_tags');
+		let analyticsDateRangeLabel = document.querySelector('.analytics-date-range-label');
+		let dateRangeSelect = document.querySelector('select[name="bookshelf_date_range"]');
+		let selectedDateRange = dateRangeSelect.options[dateRangeSelect.selectedIndex].text;
+
+		// If you choose the drop-down/select date range, fill in the input fields with the appropriate dates
+		dateRangeSelect.addEventListener('change', function() {
+			let selectedOptionValue = this.options[this.selectedIndex].value;
+			console.log('Selected option value:', selectedOptionValue);
+			if (selectedOptionValue === 'P12M') {
+				// Past 12 months
+				let endDate = new Date();
+				let startDate = new Date();
+				startDate.setFullYear(endDate.getFullYear() - 1);
+
+				const formatDate = (date) => {
+					const year = date.getFullYear();
+					const month = String(date.getMonth() + 1).padStart(2, '0');
+					const day = String(date.getDate()).padStart(2, '0');
+					return `${year}-${month}-${day}`;
+				};
+
+				document.getElementById('bookshelf_start_date').value = formatDate(startDate);
+				document.getElementById('bookshelf_end_date').value = formatDate(endDate);
+			} else if (selectedOptionValue === 'current') {
+				// Year-to-Date
+				let endDate = new Date();
+				let startDate = new Date(endDate.getFullYear(), 0, 1); // January 1st of current year
+
+				const formatDate = (date) => {
+					const year = date.getFullYear();
+					const month = String(date.getMonth() + 1).padStart(2, '0');
+					const day = String(date.getDate()).padStart(2, '0');
+					return `${year}-${month}-${day}`;
+				};
+
+				document.getElementById('bookshelf_start_date').value = formatDate(startDate);
+				document.getElementById('bookshelf_end_date').value = formatDate(endDate);
+			}
+		});
 
 		if (dateRangeButton) {
+			// Basic Analytics
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
 				loadingAnimation.classList.add('active');
+
+				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
+				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
+
+				// Update the date range label
+				if (bookshelfStartDate && bookshelfEndDate) {
+					analyticsDateRangeLabel.innerText = `From ${bookshelfStartDate} to ${bookshelfEndDate}`;
+				} else {
+					analyticsDateRangeLabel.innerText = selectedDateRange;
+				}
 		
 				var formData = new FormData(bookAnalyticsForm);
 				formData.append("action", "book_analytics_query");
@@ -479,6 +585,7 @@
 				});
 			});
 
+			// Tags
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
 		
@@ -507,6 +614,7 @@
 				});
 			});
 
+			// AI Notes Summary
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
 				let geminiSummaryContent = document.querySelector('#gemini-summary-content');
@@ -518,6 +626,14 @@
 				let bookshelf_start_date = document.querySelector('#bookshelf_start_date').value;
 				let bookshelf_end_date = document.querySelector('#bookshelf_end_date').value;
 				fetchGeminiSummary(bookshelf_start_date, bookshelf_end_date);
+			});
+
+			// Ratings
+			dateRangeButton.addEventListener("click", function(event) {
+				event.preventDefault();
+
+				// Draw us some charts
+				drawRatingsCharts();
 			});
 		}
 	}, false);

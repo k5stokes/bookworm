@@ -1711,7 +1711,8 @@ h2 {
 
 /* Analytics */
 h4.title {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
+    line-height: 1.25em;
 }
 .tags-list {
     width: 100%;

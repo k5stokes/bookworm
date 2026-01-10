@@ -853,6 +853,60 @@ function book_analytics_tags_query() {
 add_action('wp_ajax_book_analytics_tags_query', 'book_analytics_tags_query');
 add_action('wp_ajax_nopriv_book_analytics_tags_query', 'book_analytics_tags_query');
 
+/* Book Analytics Ratings Query */
+function book_analytics_ratings_query() {
+	global $wpdb;
+	$wpdb->show_errors();	
+
+	if (!isset($_POST['bookshelf_start_date']) || !isset($_POST['bookshelf_end_date'])) :
+		echo "No bookshelf date range :(";
+	else :
+
+	$bookshelf_start_date = $_POST['bookshelf_start_date'];
+	$bookshelf_end_date = $_POST['bookshelf_end_date'];
+	$bookshelf_date_range = $_POST['bookshelf_date_range'];
+    $wp_current_user_id = $_POST['wp_current_user_id'];
+	$ratingArrayObject = array();
+
+	$ratingArray = array('rating_mood' => 'Mood', 'rating_language' => 'Language', 'rating_romance' => 'Romance', 'rating_suspension_disbelief' => 'Suspension of Disbelief');
+
+	foreach ($ratingArray as $rating => $label) {
+		$rating_data = $wpdb->get_col($wpdb->prepare(
+			"SELECT $rating FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01'AND date_finished BETWEEN %s AND %s",
+			$wp_current_user_id,
+			$bookshelf_start_date,
+			$bookshelf_end_date
+		));
+
+		if ($rating == 'rating_mood') {
+			$bg_color = 'rgba(219, 99, 255, 1)';
+		} else if ($rating == 'rating_language') {
+			$bg_color = 'rgba(99, 255, 187, 1)';
+		} else if ($rating == 'rating_romance') {
+			$bg_color = 'rgb(255, 99, 132)';
+		} else if ($rating == 'rating_suspension_disbelief') {
+			$bg_color = 'rgba(99, 167, 255, 1)';
+		}
+
+		// Add to result array
+		$ratingArrayObject[] = array(
+			'rating' => $rating,
+			'label' => $label,
+			'data' => $rating_data,
+			'bg_color' => $bg_color
+		);
+	}
+
+	// Return as JSON
+	wp_send_json_success($ratingArrayObject);
+
+	endif;
+
+	die();
+}
+add_action('wp_ajax_book_analytics_ratings_query', 'book_analytics_ratings_query');
+add_action('wp_ajax_nopriv_book_analytics_ratings_query', 'book_analytics_ratings_query');
+
 /***************
 ** Add Friend **
 ***************/
