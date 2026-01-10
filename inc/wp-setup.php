@@ -90,18 +90,18 @@ add_action('init', function () {
 function get_gemini_user_notes_summary($user_id, $date_range_query) {
     global $wpdb;
 
-	// normalize incoming date range data
-	$start_date = null;
-	$end_date   = null;
-
-	
+    $bookshelf_start_date = $date_range_query['start_date'];
+    $bookshelf_end_date = $date_range_query['end_date'];
+    $bookshelf_date_range = $date_range_query['range'];	
 
     // 1. Securely fetch the user's text from your custom table
     // We use $wpdb->prepare to prevent SQL injection
     $table_name = $wpdb->prefix . 'bookworm_books';
     $user_content = $wpdb->get_col($wpdb->prepare(
-        "SELECT notes FROM $table_name WHERE user_id_shelf = %d",
-        $user_id
+        "SELECT notes FROM $table_name WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s",
+        $user_id,
+        $bookshelf_start_date,
+        $bookshelf_end_date
     ));
 
 	if (!empty($user_content)) {
