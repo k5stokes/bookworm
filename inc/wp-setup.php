@@ -154,3 +154,34 @@ function get_gemini_user_notes_summary($user_id, $date_range_query) {
     // Debug: return the full response for troubleshooting
     return "Summary could not be generated. API Response: " . esc_html($body);
 }
+
+// Add new nav item tab to the Acount page
+function wpum_account_add_custom_tab( $tabs ) {
+    $tabs['analytics-tab'] = array(
+        'name'     => esc_html( 'Analytics' ),
+        'priority' => 15, // Adjust priority to position the tab
+    );
+    return $tabs;
+}
+add_filter( 'wpum_get_account_page_tabs', 'wpum_account_add_custom_tab' );
+
+function my_custom_account_tab_redirect() {
+    if ( ! is_user_logged_in() ) {
+        return;
+    }
+
+    if ( function_exists( 'wpum_is_account_page' ) && wpum_is_account_page() ) {
+        global $wp_query;
+
+        // Check if the current tab is our custom tab
+        if ( isset( $wp_query->query_vars['tab'] ) && $wp_query->query_vars['tab'] === 'analytics-tab' ) {
+            // Define the target URL of the existing page
+            $redirect_url = get_permalink( get_page_by_path( 'analytics' ) ); 
+
+            if ( $redirect_url ) {
+                wp_redirect( $redirect_url, 302 ); // Use 302 for temporary redirect
+                exit;
+            }
+        }
+    }
+}

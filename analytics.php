@@ -14,6 +14,15 @@
 
 <main id="main" role="main" class="community analytics">
 	<style>
+		.analytics .icon-background {
+			width: 80px;
+			height: 80px;
+		}
+		.analytics .icon-background svg {
+			width: 45px;
+			height: 45px;
+			stroke-width: 0;
+		}
 		h5 {
 			font-size: 16px;
 			font-weight: 500;
@@ -166,7 +175,7 @@
 	<section>
 		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 			<div class="icon-background">
-				<?php echo file_get_contents( get_stylesheet_directory() . '/img/friends.svg'); ?>
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/icon_graph-up-arrow.svg'); ?>
 			</div>
 			<h4>By the Numbers</h4>
 		</div>
@@ -262,7 +271,7 @@
 	<section>
 		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 			<div class="icon-background">
-				<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_recommend.svg'); ?>
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/icon_journals.svg'); ?>
 			</div>
 			<h4>AI Summary of Notes</h4>
 		</div>
@@ -279,7 +288,7 @@
 	<section>
 		<div class="icon-wrapper icon-medium full-width bg-lt-blue">
 			<div class="icon-background">
-				<?php echo file_get_contents( get_stylesheet_directory() . '/img/iconb_recommend.svg'); ?>
+				<?php echo file_get_contents( get_stylesheet_directory() . '/img/icon_bar-chart.svg'); ?>
 			</div>
 			<h4>Book Characterizations</h4>
 		</div>
