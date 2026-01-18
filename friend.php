@@ -102,15 +102,31 @@
 	
 	<section class="bookshelf" id="bookshelf">
 		<?php
-			$currently_reading = new BookshelfCategory('Currently Reading', '', "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$friend_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC", $friend->user_login . " claims they're not reading anything? Maybe they're just hiding it on BookWorm. Recommend a title.", '', '');
-			$recently_finished = new BookshelfCategory('Recently Finished', '', "SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$friend_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01') ORDER BY date_finished DESC", "Encourage " . $friend->user_login . " to finish a book, any book.", '', '');
+			$currently_reading = new BookshelfCategory(
+				'Currently Reading',
+				'',
+				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$friend_id' AND date_started IS NOT NULL AND date_started != '0000-00-00' AND date_started != '1970-01-01') AND (date_finished IS NULL OR date_finished = '0000-00-00' OR date_finished = '1970-01-01') ORDER BY id DESC",
+				'date_started',
+				$friend->user_login . " claims they're not reading anything? Maybe they're just hiding it on BookWorm. Recommend a title.",
+				'',
+				''
+			);
+			$recently_finished = new BookshelfCategory(
+				'Recently Finished',
+				'',
+				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE (user_id_shelf = '$friend_id' AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01') ORDER BY date_finished DESC",
+				'date_started',
+				"Encourage " . $friend->user_login . " to finish a book, any book.",
+				'',
+				''
+			);
 			
 			$bookshelf_categories = array($currently_reading, $recently_finished);
 			$books_null = 0;
 			
 			foreach ($bookshelf_categories as $bookshelf_category) {
 				
-				$book_entries = $wpdb->get_results($bookshelf_category->query);
+				$book_entries = $wpdb->get_results($bookshelf_category->queryString);
 				
 				// Friend Deets
 			?>
