@@ -785,9 +785,38 @@ function book_analytics_query() {
 		$bookshelf_start_date,
 		$bookshelf_end_date
     ));
-	
-	echo count($book_entries);
 
+	$slide_number  = count($book_entries);
+	
+	echo "<h4 class='title'>Number of books you've finished:</h4> <span id=\"number_books_finished\">" . count($book_entries) . "</span>";
+
+	if ($book_entries) :
+	// Book Covers Slider
+	echo "<div class='slides-wrapper analytics-slider'>
+			<div class='slides'>
+				<ul class='slides-inner'>";
+					$i = 0;
+					foreach ($book_entries as $book_entry) {
+						$i++;
+						echo "<li id='slide" . $i . "' class='row slide'>";
+						echo "<a class=\"book-entry-edit-link\" href=\"/update-book/?id=" . $book_entry->id . "\">
+							<div class=\"slide-image\">
+								<img class=\"book_entry_img\" src=\"" . $book_entry->small_thumbnail_url . "\">
+							</div>
+						</a>
+						</li>";
+					}
+	echo "</ul>
+		</div>";
+	echo "<div class='carousel-prev carousel-button'>Prev</div>
+		<div id='slider_nav' class=\"slider-nav\">";
+			for ($x = 1; $x <= $slide_number; $x++) {
+				echo "<div class='slider-nav-dot'>&nbsp;</div>";
+			}
+	echo "</div>
+		<div class='carousel-next carousel-button'>Next</div>";
+	echo "</div>";
+	endif;
 	endif;
 	
 	die();

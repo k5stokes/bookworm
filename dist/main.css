@@ -1867,6 +1867,9 @@ button, [role="button"] {
 	width: 100%;
 	flex: 0 1 auto;
 }
+.analytics-slider .slide {
+  width: auto;
+}
 .slide .book-entry-edit-link {
   width: calc(50% - 3px);
   margin-right: 6px;

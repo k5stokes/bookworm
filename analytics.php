@@ -74,11 +74,14 @@
 		.date-input-wrapper .input-icon {
 			position: absolute;
 			right: 10px;
-			top: 20px;
+			bottom: -20px;
 			transform: translateY(-50%);
 			width: auto;
 			height: 40px;
 			pointer-events: none;
+		}
+		.date-input-wrapper label {
+			font-weight: 500;
 		}
 		.analytics-heading h3 {
 			margin-bottom: 0;
@@ -89,6 +92,9 @@
 		}
 		.date-range-selector h5 {
 			margin-bottom: 5px;
+		}
+		#timePeriodsList {
+			margin-bottom: 20px;
 		}
 		#timePeriodsList h4 {
 			display: inline-block;
@@ -112,6 +118,33 @@
 		.analytics #analytics_tags .tag-count-wrapper {
 			margin-bottom: 20px;
 		}
+		#generate_gemini_summary {
+			margin-bottom: 20px;
+			display: inline-block;
+		}
+		.carousel-button {
+			position: absolute;
+			bottom: 10px;
+			cursor: pointer;
+		}
+		.slides-wrapper:after {
+			content: '';
+			position: absolute;
+			z-index: 1;
+			background-image: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 90%, rgba(255, 255, 255, 1) 100%);
+			width: 100%;
+			height: 175px;
+			top: 0;
+		}
+		.slider-nav {
+			margin: 20px 0;
+		}
+		.carousel-prev {
+			left: 0;
+		}	
+		.carousel-next {
+			right: 0;
+		}
 		@media all and (max-width: 820px) {
 			.analytics .bookshelf-heading-filter-wrapper {
 				flex-direction: column;
@@ -123,8 +156,17 @@
 			#book_analytics_form > .flex {
 				flex-direction: column;
 			}
-			#dateRangeButton {
-				margin: 0 0 10px;
+			#book_analytics_form > .flex.align-items-end {
+				align-items: flex-start;
+			}
+			#book_analytics_form #dateRangeButton {
+				margin: 10px 0 20px;
+			}
+			.date-input-wrapper {
+				width: 100%;
+			}
+			h4.analytics-date-range-label {
+				max-width: 100%;
 			}
 		}
 		@media all and (max-width: 480px) {
@@ -146,28 +188,37 @@
 			<h4 class="analytics-date-range-label">Past 12 Months</h4>
 		</div>
 		<div class="date-range-selector">
-			<h5>Choose Date Range:</h5>
 			<form id="book_analytics_form" class="">
-				<div class="flex gap-10 align-items-baseline">
-					<select name="bookshelf_date_range">
-						<option value="P12M">Past 12 Months</option>
-						<option value="current">Year-to-Date</option>
-					</select>
-					<div class="flex gap-10">
+				<!-- <div class="flex gap-10 align-items-baseline"> -->
+					<div class="flex gap-10 align-items-end">
 						<div class="date-input-wrapper">
-							<label class="visually-hidden" for="start_date">Start:</label>
-							<input id="bookshelf_start_date" class="calendar-ui" name="bookshelf_start_date" type="text" value="" placeholder= "Start">
+							<label for="bookshelf_date_range">Date Range:</label>
+							<select name="bookshelf_date_range">
+								<option value="P12M">Past 12 Months</option>
+								<option value="current">Year-to-Date</option>
+								<option value="custom">Custom Date Range</option>
+							</select>
+						</div>
+						<?php
+							$bookshelf_end_date = new DateTimeImmutable();
+							$bookshelf_start_date = $bookshelf_end_date->modify('-12 months');
+						?>
+						<div class="date-input-wrapper">
+							<label for="start_date">Start:</label>
+							<input id="bookshelf_start_date" class="calendar-ui" name="bookshelf_start_date" type="text" value="<?php echo $bookshelf_start_date->format('Y-m-d'); ?>" placeholder= "Start">
 							<img class="input-icon" src="<?php echo get_stylesheet_directory_uri() . '/img/icon_calendar3.png'; ?>" alt="Calendar icon" />
 						</div>
 						<div class="date-input-wrapper">
-							<label class="visually-hidden" for="end_date">End:</label>
-							<input id="bookshelf_end_date" class="calendar-ui" name="bookshelf_end_date" type="text" value="" placeholder="End">
+							<label for="end_date">End:</label>
+							<input id="bookshelf_end_date" class="calendar-ui" name="bookshelf_end_date" type="text" value="<?php echo $bookshelf_end_date->format('Y-m-d'); ?>" placeholder="End">
 							<img class="input-icon" src="<?php echo get_stylesheet_directory_uri() . '/img/icon_calendar3.png'; ?>" alt="Calendar icon" />
 						</div>
+						<input id="dateRangeButton" type="submit" class="button button-primary" value="Apply" />
 					</div>
 					<input type="hidden" name="wp_current_user_id" value="<?php echo $wp_current_user_id; ?>" />
-					<input id="dateRangeButton" type="submit" class="button button-primary" value="Apply" />
-				</div>
+				<!-- </div> -->
+
+<div class="validation-error-message" id="validation_error" style="display: none;"></div>
 			</form>
 		</div>
 	</div>
@@ -180,10 +231,7 @@
 			<h4>By the Numbers</h4>
 		</div>
 		<div id="timePeriodsList" class="time-periods-list">
-			<?php 
-				$bookshelf_end_date = new DateTimeImmutable();
-				$bookshelf_start_date = $bookshelf_end_date->modify('-12 months');
-
+			<?php
 				$table_name = $wpdb->prefix . 'bookworm_books';
 				$book_entries = $wpdb->get_results($wpdb->prepare(
 					"SELECT * FROM $table_name WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s",
@@ -192,9 +240,37 @@
 					$bookshelf_end_date->format('Y-m-d')
 				));
 			?>
+
 			<h4 class='title'>Number of books you've finished:</h4> <span id="number_books_finished"><?php echo count($book_entries); ?></span>
 
 			<?php
+				// Book Covers Slider
+				echo "<div class='slides-wrapper analytics-slider'>
+						<div class='slides'>
+							<ul class='slides-inner'>";
+								$i = 0;
+								foreach ($book_entries as $book_entry) {
+									$i++;
+									echo "<li id='slide" . $i . "' class='row slide'>";
+									echo "<a class=\"book-entry-edit-link\" href=\"/update-book/?id=" . $book_entry->id . "\">
+										<div class=\"slide-image\">
+											<img class=\"book_entry_img\" src=\"" . $book_entry->small_thumbnail_url . "\">
+										</div>
+									</a>
+									</li>";
+								}
+				echo "</ul>
+					</div>
+					<div class='carousel-prev carousel-button'>Prev</div>
+					<div id='slider_nav' class=\"slider-nav\">";
+						$slide_number  = count($book_entries);
+						for ($x = 1; $x <= $slide_number; $x++) {
+							echo "<div class='slider-nav-dot'>&nbsp;</div>";
+						}
+				echo "</div>
+					<div class='carousel-next carousel-button'>Next</div>
+				</div>";
+
 				/*
 				// Finished Books breakdown by time period
 				$date_query_field = 'date_finished';
@@ -276,12 +352,8 @@
 			<h4>AI Summary of Notes</h4>
 		</div>
 		<div class="gemini-ai-summary-wrapper">
-			<div id="gemini-summary-content">
-				<div class="loading-spinner">
-					<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><circle cx="4" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce0" attributeName="cy" begin="0;svgSpinners3DotsBounce1.end+0.25s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.1s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="20" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce1" attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.2s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle></svg>
-					<p>Generating AI summary...</p>
-				</div>
-			</div>
+			<a href="#" id="generate_gemini_summary" class="button button-secondary">Generate AI Summary</a>
+			<div id="gemini-summary-content">&nbsp;</div>
 		</div>
 	</section>
 
@@ -332,6 +404,8 @@
 	document.addEventListener('DOMContentLoaded', function () {
 		let validationError = document.getElementById('validation_error');
 		let loadingAnimation = document.querySelector('.loading-animation');
+		let dateRangeSelect = document.querySelector('select[name="bookshelf_date_range"]');
+		let selectedDateRange = dateRangeSelect.options[dateRangeSelect.selectedIndex].text;
 
 		let startDate = document.getElementById('bookshelf_start_date');
 		new AirDatepicker(startDate, {
@@ -343,8 +417,8 @@
 				const month = String(date.getMonth() + 1).padStart(2, '0');
 				const day = String(date.getDate()).padStart(2, '0');
 				const formattedDate = `${year}-${month}-${day}`;
-				console.log('start formattedDate:', formattedDate);
 				startDate.value = formattedDate;
+				dateRangeSelect.value = 'custom';
 			}
 		})
 
@@ -358,8 +432,8 @@
 				const month = String(date.getMonth() + 1).padStart(2, '0');
 				const day = String(date.getDate()).padStart(2, '0');
 				const formattedDate = `${year}-${month}-${day}`;
-				console.log('end formattedDate:', formattedDate);
 				endDate.value = formattedDate;
+				dateRangeSelect.value = 'custom';
 			}
 		})
 
@@ -367,8 +441,78 @@
 		let bookshelf_start_date = '<?php echo $bookshelf_start_date->format('Y-m-d'); ?>';
 		let bookshelf_end_date = '<?php echo $bookshelf_end_date->format('Y-m-d'); ?>';
 
+		// Slider Stuff
+		let sliderNavDots = document.querySelectorAll('.slider-nav-dot');
+		let carouselButtons = document.querySelectorAll('.carousel-button');
+		let sliderNav = document.querySelector('#slider_nav');
+		sliderNav.style = 'display: none;';
+		carouselButtons.forEach(button => button.style.display = 'none');
+
+		if (window.innerWidth <= 499 && sliderNavDots.length > 2) {
+			carouselButtons.forEach(dot => dot.style.display = 'block');
+			sliderNav.style = 'display: flex;';
+		} else if (window.innerWidth > 500 && window.innerWidth <= 665 && sliderNavDots.length > 3) {
+			carouselButtons.forEach(dot => dot.style.display = 'block');
+			sliderNav.style = 'display: flex;';
+		} else if (window.innerWidth > 665 && window.innerWidth <= 850 && sliderNavDots.length > 4) {
+			carouselButtons.forEach(dot => dot.style.display = 'block');
+			sliderNav.style = 'display: flex;';
+		} else if (window.innerWidth > 850 && sliderNavDots.length > 5) {
+			carouselButtons.forEach(dot => dot.style.display = 'block');
+			sliderNav.style = 'display: flex;';
+		}
+
+		// Gemini Summary fetch
+		function fetchGeminiSummary(startVal, endVal, rangeVal) {
+			fetch(bookwormAjax.url, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: new URLSearchParams({
+					action: 'get_gemini_summary',
+					nonce: bookwormAjax.bookworm_thinking_nonce,
+					bookshelf_start_date: startVal,
+					bookshelf_end_date: endVal,
+					//bookshelf_date_range: rangeVal
+				})
+			})
+			.then(response => response.json())
+			.then(data => {
+				const summaryContent = document.getElementById('gemini-summary-content');
+				if (data.success) {
+					summaryContent.innerHTML = data.data + '</p><p class="small"><em>Summary generated by Google Gemini</em></p></div>';
+				} else {
+					summaryContent.innerHTML = '<div class="ai-summary"><p>Error: ' + data.data + '</p></div>';
+				}
+			})
+			.catch(error => {
+				const summaryContent = document.getElementById('gemini-summary-content');
+				summaryContent.innerHTML = '<div class="ai-summary"><p>Error loading summary.</p></div>';
+				console.error('Error:', error);
+					console.log(data.data);
+			});
+		}
+
 		// Load Gemini summary
-		fetchGeminiSummary(bookshelf_start_date, bookshelf_end_date);
+		let generateAISummaryButton = document.getElementById('generate_gemini_summary');
+		let geminiClickHandler = null;
+		
+		function createGeminiHandler(startDate, endDate) {
+			return function(event) {
+				event.preventDefault();
+				let geminiSummaryContent = document.querySelector('#gemini-summary-content');
+					geminiSummaryContent.innerHTML = `<div class="loading-spinner">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><circle cx="4" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce0" attributeName="cy" begin="0;svgSpinners3DotsBounce1.end+0.25s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.1s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="20" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce1" attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.2s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle></svg>
+                     <p>Generating AI summary...</p>
+				</div>`;
+				generateAISummaryButton.style = 'display: none;';
+				fetchGeminiSummary(startDate, endDate);
+			};
+		}
+		
+		geminiClickHandler = createGeminiHandler(bookshelf_start_date, bookshelf_end_date);
+		generateAISummaryButton.addEventListener('click', geminiClickHandler);
 
 		// Draw us some charts
 		drawRatingsCharts(bookshelf_start_date, bookshelf_end_date);
@@ -394,7 +538,6 @@
 			.then(r => r.json())
 			.then(data => {
 				data.data.forEach(item => {
-					console.log(item.label, item.rating, item.data, item.bg_color);
 
 					var frequencyMap = item.data.reduce((accumulator, currentValue) => {
 						// If the current number is already a key in the accumulator object, increment its count.
@@ -473,47 +616,12 @@
 			});
 		} // End drawRatingsCharts
 
-		// Gemini Summary fetch
-		function fetchGeminiSummary(startVal, endVal, rangeVal) {
-			fetch(bookwormAjax.url, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				body: new URLSearchParams({
-					action: 'get_gemini_summary',
-					nonce: bookwormAjax.bookworm_thinking_nonce,
-					bookshelf_start_date: startVal,
-					bookshelf_end_date: endVal,
-					//bookshelf_date_range: rangeVal
-				})
-			})
-			.then(response => response.json())
-			.then(data => {
-				const summaryContent = document.getElementById('gemini-summary-content');
-				if (data.success) {
-					summaryContent.innerHTML = data.data + '</p><p class="small"><em>Summary generated by Google Gemini</em></p></div>';
-					console.log(data.data);
-				} else {
-					summaryContent.innerHTML = '<div class="ai-summary"><p>Error: ' + data.data + '</p></div>';
-				}
-			})
-			.catch(error => {
-				const summaryContent = document.getElementById('gemini-summary-content');
-				summaryContent.innerHTML = '<div class="ai-summary"><p>Error loading summary.</p></div>';
-				console.error('Error:', error);
-					console.log(data.data);
-			});
-		}
-
 		// Book Analytics AJAX
 		let bookAnalyticsForm = document.querySelector('#book_analytics_form');
 		let dateRangeButton = document.querySelector('#dateRangeButton');
-		let numberBooksFinished = document.querySelector('#number_books_finished');
+		let timePeriodsList = document.querySelector('#timePeriodsList');
 		let analyticsTags = document.querySelector('#analytics_tags');
 		let analyticsDateRangeLabel = document.querySelector('.analytics-date-range-label');
-		let dateRangeSelect = document.querySelector('select[name="bookshelf_date_range"]');
-		let selectedDateRange = dateRangeSelect.options[dateRangeSelect.selectedIndex].text;
 
 		// If you choose the drop-down/select date range, fill in the input fields with the appropriate dates
 		dateRangeSelect.addEventListener('change', function() {
@@ -548,6 +656,10 @@
 
 				document.getElementById('bookshelf_start_date').value = formatDate(startDate);
 				document.getElementById('bookshelf_end_date').value = formatDate(endDate);
+			} else if (selectedOptionValue === 'custom') {
+				// Clear date inputs and let user pick dates
+				document.getElementById('bookshelf_start_date').value = '';
+				document.getElementById('bookshelf_end_date').value = '';
 			}
 		});
 
@@ -555,10 +667,18 @@
 			// Basic Analytics
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
-				loadingAnimation.classList.add('active');
 
 				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
 				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
+
+				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
+					validationError.innerText = 'Please select both a start and end date.';
+					validationError.style.display = 'block';
+					return;
+				} else {
+					validationError.style.display = 'none';
+				}
+				loadingAnimation.classList.add('active');
 
 				// Update the date range label
 				if (bookshelfStartDate && bookshelfEndDate) {
@@ -577,14 +697,40 @@
 				})
 				.then((response) => response.text())
 				.then((text) => {
+					timePeriodsList.innerHTML = text;
 					console.log(text);
-					numberBooksFinished.innerHTML = text;
 				})
 				.then((data) => {
 					if (data) {
-						console.log(data);
-						numberBooksFinished.innerHTML = data;
+						timePeriodsList.innerHTML = data;
+						conesole.log(data);
 					}
+					// Reinitialize carousels with updated content
+					let slider = document.querySelector('.analytics-slider');
+					console.log(slider);
+					if (slider) {
+						initializeAnalyticsCarousels();
+						
+						let sliderNavDots = document.querySelectorAll('.slider-nav-dot');
+						let carouselButtons = document.querySelectorAll('.carousel-button');
+						let sliderNav = document.querySelector('#slider_nav');
+						sliderNav.style = 'display: none;';
+						carouselButtons.forEach(button => button.style.display = 'none');
+
+						if (window.innerWidth <= 499 && sliderNavDots.length > 2) {
+							carouselButtons.forEach(dot => dot.style.display = 'block');
+							sliderNav.style = 'display: flex;';
+						} else if (window.innerWidth > 500 && window.innerWidth <= 665 && sliderNavDots.length > 3) {
+							carouselButtons.forEach(dot => dot.style.display = 'block');
+							sliderNav.style = 'display: flex;';
+						} else if (window.innerWidth > 665 && window.innerWidth <= 850 && sliderNavDots.length > 4) {
+							carouselButtons.forEach(dot => dot.style.display = 'block');
+							sliderNav.style = 'display: flex;';
+						} else if (window.innerWidth > 850 && sliderNavDots.length > 5) {
+							carouselButtons.forEach(dot => dot.style.display = 'block');
+							sliderNav.style = 'display: flex;';
+						}
+}
 					loadingAnimation.classList.remove('active');
 					window.scrollTo({top: 0, behavior: 'smooth'});
 				})
@@ -597,6 +743,17 @@
 			// Tags
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
+
+				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
+				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
+
+				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
+					validationError.innerText = 'Please select both a start and end date.';
+					validationError.style.display = 'block';
+					return;
+				} else {
+					validationError.style.display = 'none';
+				}
 		
 				var formData = new FormData(bookAnalyticsForm);
 				formData.append("action", "book_analytics_tags_query");
@@ -608,12 +765,10 @@
 				})
 				.then((response) => response.text())
 				.then((text) => {
-					console.log(text);
 					analyticsTags.innerHTML = text;
 				})
 				.then((data) => {
 					if (data) {
-						console.log(data);
 						analyticsTags.innerHTML = data;
 					}
 				})
@@ -626,26 +781,168 @@
 			// AI Notes Summary
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
+				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
+				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
 				let geminiSummaryContent = document.querySelector('#gemini-summary-content');
-				geminiSummaryContent.innerHTML = `<div class="loading-spinner">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><circle cx="4" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce0" attributeName="cy" begin="0;svgSpinners3DotsBounce1.end+0.25s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.1s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="20" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce1" attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.2s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle></svg>
-                     <p>Generating AI summary...</p>
-				</div>`;
-		
-				let bookshelf_start_date = document.querySelector('#bookshelf_start_date').value;
-				let bookshelf_end_date = document.querySelector('#bookshelf_end_date').value;
-				fetchGeminiSummary(bookshelf_start_date, bookshelf_end_date);
+
+				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
+					validationError.innerText = 'Please select both a start and end date.';
+					validationError.style.display = 'block';
+					return;
+				} else {
+					validationError.style.display = 'none';
+				}
+
+				geminiSummaryContent.innerHTML = `&nbsp;`;
+				generateAISummaryButton.style = 'display: inline-block;';
+
+				// Remove the old event listener
+				if (geminiClickHandler) {
+					generateAISummaryButton.removeEventListener('click', geminiClickHandler);
+				}
+
+				// Create and add the new event listener with updated dates
+				geminiClickHandler = createGeminiHandler(bookshelfStartDate, bookshelfEndDate);
+				generateAISummaryButton.addEventListener('click', geminiClickHandler);
 			});
 
 			// Ratings
 			dateRangeButton.addEventListener("click", function(event) {
 				event.preventDefault();
 
+				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
+				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
+
+				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
+					validationError.innerText = 'Please select both a start and end date.';
+					validationError.style.display = 'block';
+					return;
+				} else {
+					validationError.style.display = 'none';
+				}
+
 				// Draw us some charts
 				drawRatingsCharts();
 			});
 		}
-	}, false);
+
+		// Analytics Sliders - Create a reusable function to initialize carousels
+		function initializeAnalyticsCarousels() {
+			let analyticsSliders = document.querySelectorAll('.analytics-slider');
+			
+			if (analyticsSliders.length === 0) {
+				return; // No sliders found, exit the function
+			}
+			function createAnalyticsCarousel(carouselElement) {
+			
+				let slideWrapper = carouselElement.querySelector('.slides-inner');
+				let slides = carouselElement.querySelector('.slides');
+				let slideWidth = carouselElement.querySelector('.slide').offsetWidth;
+				let slideNumber = carouselElement.querySelectorAll('.slide').length;
+				let slideWrapperWidth = slideWidth * slideNumber;
+				let sliderNav = carouselElement.querySelector('#slider_nav');
+				let currentSlide = 0;
+				let firstDot = sliderNav.firstElementChild;
+
+				sliderNav.classList.add('active');
+				firstDot.classList.add('active');
+				slides.setAttribute("style", "width:" + slideWrapperWidth + "px");
+			
+				// Function to move to a specific slide
+				function goToSlide(slideIndex) {
+					currentSlide = slideIndex;
+					slideWrapper.style.transform = `translateX(${currentSlide * slideWidth}px)`;
+				}
+
+				const touchStartHandler = function(event) {
+					touchDistance = 0;
+					startX = event.touches[0].clientX;
+				}
+				
+				const touchSlideMover = function(event) {
+					const moveX = event.touches[0].clientX;
+					touchDistance = startX - moveX;
+
+					// Update slider position based on touch movement (adjust logic as needed)
+					slideWrapper.style.transform = `translateX(${currentSlide * slideWidth - touchDistance}px)`;
+				}
+
+				const touchEndHandler = function(event) {
+
+					console.log('total distance = ' + touchDistance);
+					// Logic to determine which slide to snap to based on touch movement distance
+					const threshold = slideWidth / 5; // Adjust threshold for sensitivity
+
+					if (Math.abs(touchDistance) > threshold) {
+						if (touchDistance > 0) {
+							if (currentSlide != (-slideNumber + 1)) {
+								goToSlide(currentSlide - 1); // Move to next slide
+								let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
+								activeSlideDot.nextSibling.classList.add('active');
+								activeSlideDot.classList.remove('active');
+							} else {
+								goToSlide(currentSlide); // Stay on the same slide
+							}
+						} else {
+							if (currentSlide != 0) {
+								goToSlide(currentSlide + 1); // Move to previous slide
+								let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
+								activeSlideDot.previousSibling.classList.add('active');
+								activeSlideDot.classList.remove('active');
+							} else {
+								goToSlide(currentSlide); // Stay on the same slide
+							}
+						}
+					} else {
+						goToSlide(currentSlide); // Stay on the same slide
+						console.log('sit, Ubu, sit. Good dog.');
+					}
+				};
+
+				slideWrapper.addEventListener('touchstart', touchStartHandler);
+				slideWrapper.addEventListener('touchmove', touchSlideMover);
+				slideWrapper.addEventListener('touchend', touchEndHandler);
+
+				// Click controls for next and previous buttons
+				const nextButton = carouselElement.querySelector('.carousel-next');
+				const prevButton = carouselElement.querySelector('.carousel-prev');
+
+				if (nextButton) {
+					nextButton.addEventListener('click', function(e) {
+						e.preventDefault();
+						if (currentSlide != (-slideNumber + 1)) {
+							goToSlide(currentSlide - 1); // Move to next slide
+							let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
+							if (activeSlideDot.nextSibling) {
+								activeSlideDot.nextSibling.classList.add('active');
+								activeSlideDot.classList.remove('active');
+							}
+						}
+					});
+				}
+
+				if (prevButton) {
+					prevButton.addEventListener('click', function(e) {
+						e.preventDefault();
+						if (currentSlide != 0) {
+							goToSlide(currentSlide + 1); // Move to previous slide
+							let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
+							if (activeSlideDot.previousSibling) {
+								activeSlideDot.previousSibling.classList.add('active');
+								activeSlideDot.classList.remove('active');
+							}
+						}
+					});
+				}
+			}
+
+			analyticsSliders.forEach(createAnalyticsCarousel);
+		}
+
+		// Initialize carousels on page load
+		initializeAnalyticsCarousels();
+
+	}, false); // end if DOM is loaded
 </script>
 
 <?php get_footer(); ?>
