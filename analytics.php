@@ -31,6 +31,26 @@
 		.tags-wrapper {
 			text-align: center;
 		}
+		li.tag-entry a.popup-trigger {
+			text-decoration: none;
+			color: #333;
+		}
+		.popup-book-entry a.book-entry-edit-link {
+			display: flex;
+		}
+		.popup-book-entry .book-entry-thumb img {
+			width: 85px;
+    		height: auto;
+		}
+		.popup-book-entry .book-entry-details {
+			margin-left: 0;
+		}
+		.popup-book-entry .book-entry-title, .popup-book-entry .book-entry-author {
+			text-align: left;
+		}
+		.popup-book-entry .book-entry-author {
+			font-weight: 400;
+		}
 		.loading-spinner {
 			padding: 20px;
 		}
@@ -203,6 +223,11 @@
 							$bookshelf_end_date = new DateTimeImmutable();
 							$bookshelf_start_date = $bookshelf_end_date->modify('-12 months');
 						?>
+						<script>
+							// Put the date vars in JS
+							let bookshelf_start_date = '<?php echo $bookshelf_start_date->format('Y-m-d'); ?>';
+							let bookshelf_end_date = '<?php echo $bookshelf_end_date->format('Y-m-d'); ?>';
+						</script>
 						<div class="date-input-wrapper">
 							<label for="start_date">Start:</label>
 							<input id="bookshelf_start_date" class="calendar-ui" name="bookshelf_start_date" type="text" value="<?php echo $bookshelf_start_date->format('Y-m-d'); ?>" placeholder= "Start">
@@ -323,17 +348,40 @@
 
 							foreach ($all_book_tags as $tagID) {
 								$tag = get_tag($tagID);
-								$book_count = $wpdb->get_var($wpdb->prepare(
-									"SELECT COUNT(*) FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s AND FIND_IN_SET(%d, tags)",
+								$book_entries = $wpdb->get_results($wpdb->prepare(
+									"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s AND FIND_IN_SET(%d, tags)",
 									$wp_current_user_id,
 									$bookshelf_start_date->format('Y-m-d'),
 									$bookshelf_end_date->format('Y-m-d'),
 									$tagID
 								));
+								$book_count = count($book_entries);
 
 								$output .= '<div class="tag-count-wrapper">';
-								$output .= '<li class="tag-entry active ' . $tag->slug . '" data-id="' . $tag->slug . '">' . $tag->name . '</li>';
+								$output .= '<li class="tag-entry active ' . $tag->slug . '" data-id="' . $tag->slug . '">';
+								$output .= '<a class="popup-trigger" href="#popup_tags_' . $tagID . '">';
+								$output .= $tag->name;
+								$output .= '</a>';
+								$output .= '</li>';
 								$output .= '<span class="book-count">' . $book_count . '</span>';
+								$output .= '</div>';
+								$output .= '<div id="popup_tags_' . $tagID . '" class="popup-wrapper popup-tags ' . $tagID . '">';
+								$output .= '<div class="popup popup-medium">';
+								$output .= '<a class="close-button popup-close" href="#"><img src="' . get_stylesheet_directory_uri() . '/img/icon_close.svg' . '" alt="Close button" /></a>';
+								foreach ($book_entries as $book_entry) {
+									$output .= '<div class="book-entry popup-book-entry">';
+									$output .= '<a class="book-entry-edit-link" href="/update-book/?id=' . $book_entry->id . '">';
+									$output .= '<div class="book-entry-thumb">
+										<img class="book_entry_img" src="' . $book_entry->small_thumbnail_url . '">
+									</div>';
+									$output .= '<div class="book-entry-details">';
+									$output .= '<div class="book-entry-title">' . stripslashes($book_entry->title) . '</div>';
+									$output .= '<div class="book-entry-author">by ' . sanitizeInput($book_entry->author) . '</div>';
+									$output .= '</div>';
+									$output .= '</a>';
+									$output .= '</div>';
+								}
+								$output .= '</div>';
 								$output .= '</div>';
 							}
 							echo $output;
@@ -400,549 +448,10 @@
 	<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><circle cx="4" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce0" attributeName="cy" begin="0;svgSpinners3DotsBounce1.end+0.25s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.1s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="20" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce1" attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.2s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle></svg>
 </div>
 
+<?php get_footer(); ?>
+
 <script type="text/javascript">
 	document.addEventListener('DOMContentLoaded', function () {
-		let validationError = document.getElementById('validation_error');
-		let loadingAnimation = document.querySelector('.loading-animation');
-		let dateRangeSelect = document.querySelector('select[name="bookshelf_date_range"]');
-		let selectedDateRange = dateRangeSelect.options[dateRangeSelect.selectedIndex].text;
-
-		let startDate = document.getElementById('bookshelf_start_date');
-		new AirDatepicker(startDate, {
-			isMobile: true,
-    		autoClose: true,
-			buttons: ['clear'],
-			onSelect: ({date}) => {
-				const year = date.getFullYear();
-				const month = String(date.getMonth() + 1).padStart(2, '0');
-				const day = String(date.getDate()).padStart(2, '0');
-				const formattedDate = `${year}-${month}-${day}`;
-				startDate.value = formattedDate;
-				dateRangeSelect.value = 'custom';
-			}
-		})
-
-		let endDate = document.getElementById('bookshelf_end_date');
-		new AirDatepicker(endDate, {
-			isMobile: true,
-    		autoClose: true,
-			buttons: ['clear'],
-			onSelect: ({date}) => {
-				const year = date.getFullYear();
-				const month = String(date.getMonth() + 1).padStart(2, '0');
-				const day = String(date.getDate()).padStart(2, '0');
-				const formattedDate = `${year}-${month}-${day}`;
-				endDate.value = formattedDate;
-				dateRangeSelect.value = 'custom';
-			}
-		})
-
-		// Put the date vars in JS
-		let bookshelf_start_date = '<?php echo $bookshelf_start_date->format('Y-m-d'); ?>';
-		let bookshelf_end_date = '<?php echo $bookshelf_end_date->format('Y-m-d'); ?>';
-
-		// Slider Stuff
-		let sliderNavDots = document.querySelectorAll('.slider-nav-dot');
-		let carouselButtons = document.querySelectorAll('.carousel-button');
-		let sliderNav = document.querySelector('#slider_nav');
-		sliderNav.style = 'display: none;';
-		carouselButtons.forEach(button => button.style.display = 'none');
-
-		if (window.innerWidth <= 499 && sliderNavDots.length > 2) {
-			carouselButtons.forEach(dot => dot.style.display = 'block');
-			sliderNav.style = 'display: flex;';
-		} else if (window.innerWidth > 500 && window.innerWidth <= 665 && sliderNavDots.length > 3) {
-			carouselButtons.forEach(dot => dot.style.display = 'block');
-			sliderNav.style = 'display: flex;';
-		} else if (window.innerWidth > 665 && window.innerWidth <= 850 && sliderNavDots.length > 4) {
-			carouselButtons.forEach(dot => dot.style.display = 'block');
-			sliderNav.style = 'display: flex;';
-		} else if (window.innerWidth > 850 && sliderNavDots.length > 5) {
-			carouselButtons.forEach(dot => dot.style.display = 'block');
-			sliderNav.style = 'display: flex;';
-		}
-
-		// Gemini Summary fetch
-		function fetchGeminiSummary(startVal, endVal, rangeVal) {
-			fetch(bookwormAjax.url, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				body: new URLSearchParams({
-					action: 'get_gemini_summary',
-					nonce: bookwormAjax.bookworm_thinking_nonce,
-					bookshelf_start_date: startVal,
-					bookshelf_end_date: endVal,
-					//bookshelf_date_range: rangeVal
-				})
-			})
-			.then(response => response.json())
-			.then(data => {
-				const summaryContent = document.getElementById('gemini-summary-content');
-				if (data.success) {
-					summaryContent.innerHTML = data.data + '</p><p class="small"><em>Summary generated by Google Gemini</em></p></div>';
-				} else {
-					summaryContent.innerHTML = '<div class="ai-summary"><p>Error: ' + data.data + '</p></div>';
-				}
-			})
-			.catch(error => {
-				const summaryContent = document.getElementById('gemini-summary-content');
-				summaryContent.innerHTML = '<div class="ai-summary"><p>Error loading summary.</p></div>';
-				console.error('Error:', error);
-					console.log(data.data);
-			});
-		}
-
-		// Load Gemini summary
-		let generateAISummaryButton = document.getElementById('generate_gemini_summary');
-		let geminiClickHandler = null;
-		
-		function createGeminiHandler(startDate, endDate) {
-			return function(event) {
-				event.preventDefault();
-				let geminiSummaryContent = document.querySelector('#gemini-summary-content');
-					geminiSummaryContent.innerHTML = `<div class="loading-spinner">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"><circle cx="4" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce0" attributeName="cy" begin="0;svgSpinners3DotsBounce1.end+0.25s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="12" cy="12" r="3" fill="currentColor"><animate attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.1s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle><circle cx="20" cy="12" r="3" fill="currentColor"><animate id="svgSpinners3DotsBounce1" attributeName="cy" begin="svgSpinners3DotsBounce0.begin+0.2s" calcMode="spline" dur="0.6s" keySplines=".33,.66,.66,1;.33,0,.66,.33" values="12;6;12"/></circle></svg>
-                     <p>Generating AI summary...</p>
-				</div>`;
-				generateAISummaryButton.style = 'display: none;';
-				fetchGeminiSummary(startDate, endDate);
-			};
-		}
-		
-		geminiClickHandler = createGeminiHandler(bookshelf_start_date, bookshelf_end_date);
-		generateAISummaryButton.addEventListener('click', geminiClickHandler);
-
-		// Draw us some charts
-		drawRatingsCharts(bookshelf_start_date, bookshelf_end_date);
-
-		// Ratings Charts function
-		function drawRatingsCharts(startVal, endVal) {
-			let bookAnalyticsForm = document.querySelector('#book_analytics_form');
-			var formData = new FormData(bookAnalyticsForm);
-
-			if (startVal && endVal) {
-				// Override the date values with passed parameters
-				formData.set("bookshelf_start_date", startVal);
-				formData.set("bookshelf_end_date", endVal);
-			}
-
-			formData.append("action", "book_analytics_ratings_query");
-
-			fetch([bookwormAjax.url], {
-				method: "POST",
-				credentials: "same-origin",
-				body: formData
-			})
-			.then(r => r.json())
-			.then(data => {
-				data.data.forEach(item => {
-
-					var frequencyMap = item.data.reduce((accumulator, currentValue) => {
-						// If the current number is already a key in the accumulator object, increment its count.
-						// Otherwise, initialize its count to 1.
-						accumulator[currentValue] = (accumulator[currentValue] || 0) + 1;
-						return accumulator;
-					}, {}); // The second argument {} is the initial value of the accumulator (an empty object).
-
-					var data = {
-						datasets: [{
-							label: item.label,
-							data: Object.entries(frequencyMap).map(([key, value]) => ({
-								x: parseInt(key),
-								y: 0,
-								r: value
-							})),
-							backgroundColor: item.bg_color
-						}]
-					};
-
-					// 1. Find the existing chart instance using the canvas ID
-					const existingChart = Chart.getChart(item.rating);
-
-					// 2. If it exists, destroy it
-					if (existingChart) {
-						existingChart.destroy();
-					}
-
-					var bookChart = new Chart(
-						document.getElementById(item.rating),
-						{
-							type: 'bubble',
-							data: data,
-							options: {
-								plugins: {
-									tooltip: {
-										callbacks: {
-											label: function(context) {
-												return 'Count: ' + context.raw.r + ' of ' + item.data.length;
-											}
-										}
-									}
-								},
-								scales: {
-									x: { // X-axis configuration
-										type: 'linear', // Essential for numerical ranges
-										position: 'bottom',
-										suggestedMax: 5,
-										suggestedMin: 1,
-										ticks: {
-											stepSize: 1, // Forces the ticks to be 1, 2, 3, etc.
-											// or use precision: 0 as an alternative:
-											// precision: 0 
-										}
-									},
-									y: { // Y-axis configuration
-										type: 'linear', // Essential for numerical ranges
-										suggestedMax: 10,
-										suggestedMin: -10,
-										ticks: {
-											display: false // This hides the numbers on the y-axis
-										},
-										grid: {
-											display: false // This hides the grid lines for the y-axis
-										}
-									}
-								}
-							}
-						}
-					);
-				});
-			})
-			.catch((error) => {
-				console.log("Error: ");
-				console.error(error);
-			});
-		} // End drawRatingsCharts
-
-		// Book Analytics AJAX
-		let bookAnalyticsForm = document.querySelector('#book_analytics_form');
-		let dateRangeButton = document.querySelector('#dateRangeButton');
-		let timePeriodsList = document.querySelector('#timePeriodsList');
-		let analyticsTags = document.querySelector('#analytics_tags');
-		let analyticsDateRangeLabel = document.querySelector('.analytics-date-range-label');
-
-		// If you choose the drop-down/select date range, fill in the input fields with the appropriate dates
-		dateRangeSelect.addEventListener('change', function() {
-			let selectedOptionValue = this.options[this.selectedIndex].value;
-			console.log('Selected option value:', selectedOptionValue);
-			if (selectedOptionValue === 'P12M') {
-				// Past 12 months
-				let endDate = new Date();
-				let startDate = new Date();
-				startDate.setFullYear(endDate.getFullYear() - 1);
-
-				const formatDate = (date) => {
-					const year = date.getFullYear();
-					const month = String(date.getMonth() + 1).padStart(2, '0');
-					const day = String(date.getDate()).padStart(2, '0');
-					return `${year}-${month}-${day}`;
-				};
-
-				document.getElementById('bookshelf_start_date').value = formatDate(startDate);
-				document.getElementById('bookshelf_end_date').value = formatDate(endDate);
-			} else if (selectedOptionValue === 'current') {
-				// Year-to-Date
-				let endDate = new Date();
-				let startDate = new Date(endDate.getFullYear(), 0, 1); // January 1st of current year
-
-				const formatDate = (date) => {
-					const year = date.getFullYear();
-					const month = String(date.getMonth() + 1).padStart(2, '0');
-					const day = String(date.getDate()).padStart(2, '0');
-					return `${year}-${month}-${day}`;
-				};
-
-				document.getElementById('bookshelf_start_date').value = formatDate(startDate);
-				document.getElementById('bookshelf_end_date').value = formatDate(endDate);
-			} else if (selectedOptionValue === 'custom') {
-				// Clear date inputs and let user pick dates
-				document.getElementById('bookshelf_start_date').value = '';
-				document.getElementById('bookshelf_end_date').value = '';
-			}
-		});
-
-		if (dateRangeButton) {
-			// Basic Analytics
-			dateRangeButton.addEventListener("click", function(event) {
-				event.preventDefault();
-
-				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
-				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
-
-				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
-					validationError.innerText = 'Please select both a start and end date.';
-					validationError.style.display = 'block';
-					return;
-				} else {
-					validationError.style.display = 'none';
-				}
-				loadingAnimation.classList.add('active');
-
-				// Update the date range label
-				if (bookshelfStartDate && bookshelfEndDate) {
-					analyticsDateRangeLabel.innerText = `From ${bookshelfStartDate} to ${bookshelfEndDate}`;
-				} else {
-					analyticsDateRangeLabel.innerText = selectedDateRange;
-				}
-		
-				var formData = new FormData(bookAnalyticsForm);
-				formData.append("action", "book_analytics_query");
-				
-				fetch([bookwormAjax.url], {
-					method: "POST",
-					credentials: "same-origin",
-					body: formData
-				})
-				.then((response) => response.text())
-				.then((text) => {
-					timePeriodsList.innerHTML = text;
-					console.log(text);
-				})
-				.then((data) => {
-					if (data) {
-						timePeriodsList.innerHTML = data;
-						conesole.log(data);
-					}
-					// Reinitialize carousels with updated content
-					let slider = document.querySelector('.analytics-slider');
-					console.log(slider);
-					if (slider) {
-						initializeAnalyticsCarousels();
-						
-						let sliderNavDots = document.querySelectorAll('.slider-nav-dot');
-						let carouselButtons = document.querySelectorAll('.carousel-button');
-						let sliderNav = document.querySelector('#slider_nav');
-						sliderNav.style = 'display: none;';
-						carouselButtons.forEach(button => button.style.display = 'none');
-
-						if (window.innerWidth <= 499 && sliderNavDots.length > 2) {
-							carouselButtons.forEach(dot => dot.style.display = 'block');
-							sliderNav.style = 'display: flex;';
-						} else if (window.innerWidth > 500 && window.innerWidth <= 665 && sliderNavDots.length > 3) {
-							carouselButtons.forEach(dot => dot.style.display = 'block');
-							sliderNav.style = 'display: flex;';
-						} else if (window.innerWidth > 665 && window.innerWidth <= 850 && sliderNavDots.length > 4) {
-							carouselButtons.forEach(dot => dot.style.display = 'block');
-							sliderNav.style = 'display: flex;';
-						} else if (window.innerWidth > 850 && sliderNavDots.length > 5) {
-							carouselButtons.forEach(dot => dot.style.display = 'block');
-							sliderNav.style = 'display: flex;';
-						}
-}
-					loadingAnimation.classList.remove('active');
-					window.scrollTo({top: 0, behavior: 'smooth'});
-				})
-				.catch((error) => {
-					console.log("Error: ");
-					console.error(error);
-				});
-			});
-
-			// Tags
-			dateRangeButton.addEventListener("click", function(event) {
-				event.preventDefault();
-
-				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
-				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
-
-				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
-					validationError.innerText = 'Please select both a start and end date.';
-					validationError.style.display = 'block';
-					return;
-				} else {
-					validationError.style.display = 'none';
-				}
-		
-				var formData = new FormData(bookAnalyticsForm);
-				formData.append("action", "book_analytics_tags_query");
-				
-				fetch([bookwormAjax.url], {
-					method: "POST",
-					credentials: "same-origin",
-					body: formData
-				})
-				.then((response) => response.text())
-				.then((text) => {
-					analyticsTags.innerHTML = text;
-				})
-				.then((data) => {
-					if (data) {
-						analyticsTags.innerHTML = data;
-					}
-				})
-				.catch((error) => {
-					console.log("Error: ");
-					console.error(error);
-				});
-			});
-
-			// AI Notes Summary
-			dateRangeButton.addEventListener("click", function(event) {
-				event.preventDefault();
-				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
-				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
-				let geminiSummaryContent = document.querySelector('#gemini-summary-content');
-
-				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
-					validationError.innerText = 'Please select both a start and end date.';
-					validationError.style.display = 'block';
-					return;
-				} else {
-					validationError.style.display = 'none';
-				}
-
-				geminiSummaryContent.innerHTML = `&nbsp;`;
-				generateAISummaryButton.style = 'display: inline-block;';
-
-				// Remove the old event listener
-				if (geminiClickHandler) {
-					generateAISummaryButton.removeEventListener('click', geminiClickHandler);
-				}
-
-				// Create and add the new event listener with updated dates
-				geminiClickHandler = createGeminiHandler(bookshelfStartDate, bookshelfEndDate);
-				generateAISummaryButton.addEventListener('click', geminiClickHandler);
-			});
-
-			// Ratings
-			dateRangeButton.addEventListener("click", function(event) {
-				event.preventDefault();
-
-				let bookshelfStartDate = document.querySelector('#bookshelf_start_date').value;
-				let bookshelfEndDate = document.querySelector('#bookshelf_end_date').value;
-
-				if (bookshelfStartDate === '' || bookshelfEndDate === '') {
-					validationError.innerText = 'Please select both a start and end date.';
-					validationError.style.display = 'block';
-					return;
-				} else {
-					validationError.style.display = 'none';
-				}
-
-				// Draw us some charts
-				drawRatingsCharts();
-			});
-		}
-
-		// Analytics Sliders - Create a reusable function to initialize carousels
-		function initializeAnalyticsCarousels() {
-			let analyticsSliders = document.querySelectorAll('.analytics-slider');
-			
-			if (analyticsSliders.length === 0) {
-				return; // No sliders found, exit the function
-			}
-			function createAnalyticsCarousel(carouselElement) {
-			
-				let slideWrapper = carouselElement.querySelector('.slides-inner');
-				let slides = carouselElement.querySelector('.slides');
-				let slideWidth = carouselElement.querySelector('.slide').offsetWidth;
-				let slideNumber = carouselElement.querySelectorAll('.slide').length;
-				let slideWrapperWidth = slideWidth * slideNumber;
-				let sliderNav = carouselElement.querySelector('#slider_nav');
-				let currentSlide = 0;
-				let firstDot = sliderNav.firstElementChild;
-
-				sliderNav.classList.add('active');
-				firstDot.classList.add('active');
-				slides.setAttribute("style", "width:" + slideWrapperWidth + "px");
-			
-				// Function to move to a specific slide
-				function goToSlide(slideIndex) {
-					currentSlide = slideIndex;
-					slideWrapper.style.transform = `translateX(${currentSlide * slideWidth}px)`;
-				}
-
-				const touchStartHandler = function(event) {
-					touchDistance = 0;
-					startX = event.touches[0].clientX;
-				}
-				
-				const touchSlideMover = function(event) {
-					const moveX = event.touches[0].clientX;
-					touchDistance = startX - moveX;
-
-					// Update slider position based on touch movement (adjust logic as needed)
-					slideWrapper.style.transform = `translateX(${currentSlide * slideWidth - touchDistance}px)`;
-				}
-
-				const touchEndHandler = function(event) {
-
-					console.log('total distance = ' + touchDistance);
-					// Logic to determine which slide to snap to based on touch movement distance
-					const threshold = slideWidth / 5; // Adjust threshold for sensitivity
-
-					if (Math.abs(touchDistance) > threshold) {
-						if (touchDistance > 0) {
-							if (currentSlide != (-slideNumber + 1)) {
-								goToSlide(currentSlide - 1); // Move to next slide
-								let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
-								activeSlideDot.nextSibling.classList.add('active');
-								activeSlideDot.classList.remove('active');
-							} else {
-								goToSlide(currentSlide); // Stay on the same slide
-							}
-						} else {
-							if (currentSlide != 0) {
-								goToSlide(currentSlide + 1); // Move to previous slide
-								let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
-								activeSlideDot.previousSibling.classList.add('active');
-								activeSlideDot.classList.remove('active');
-							} else {
-								goToSlide(currentSlide); // Stay on the same slide
-							}
-						}
-					} else {
-						goToSlide(currentSlide); // Stay on the same slide
-						console.log('sit, Ubu, sit. Good dog.');
-					}
-				};
-
-				slideWrapper.addEventListener('touchstart', touchStartHandler);
-				slideWrapper.addEventListener('touchmove', touchSlideMover);
-				slideWrapper.addEventListener('touchend', touchEndHandler);
-
-				// Click controls for next and previous buttons
-				const nextButton = carouselElement.querySelector('.carousel-next');
-				const prevButton = carouselElement.querySelector('.carousel-prev');
-
-				if (nextButton) {
-					nextButton.addEventListener('click', function(e) {
-						e.preventDefault();
-						if (currentSlide != (-slideNumber + 1)) {
-							goToSlide(currentSlide - 1); // Move to next slide
-							let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
-							if (activeSlideDot.nextSibling) {
-								activeSlideDot.nextSibling.classList.add('active');
-								activeSlideDot.classList.remove('active');
-							}
-						}
-					});
-				}
-
-				if (prevButton) {
-					prevButton.addEventListener('click', function(e) {
-						e.preventDefault();
-						if (currentSlide != 0) {
-							goToSlide(currentSlide + 1); // Move to previous slide
-							let activeSlideDot = carouselElement.querySelector('.slider-nav-dot.active');
-							if (activeSlideDot.previousSibling) {
-								activeSlideDot.previousSibling.classList.add('active');
-								activeSlideDot.classList.remove('active');
-							}
-						}
-					});
-				}
-			}
-
-			analyticsSliders.forEach(createAnalyticsCarousel);
-		}
-
-		// Initialize carousels on page load
-		initializeAnalyticsCarousels();
 
 	}, false); // end if DOM is loaded
 </script>
-
-<?php get_footer(); ?>

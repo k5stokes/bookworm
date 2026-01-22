@@ -861,6 +861,7 @@ function book_analytics_tags_query() {
 
 		foreach ($all_book_tags as $tagID) {
 			$tag = get_tag($tagID);
+			/*
 			$book_count = $wpdb->get_var($wpdb->prepare(
 				"SELECT COUNT(*) FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s AND FIND_IN_SET(%d, tags)",
 				$wp_current_user_id,
@@ -868,10 +869,41 @@ function book_analytics_tags_query() {
 				$bookshelf_end_date,
 				$tagID
 			));
+			*/
+			$book_entries = $wpdb->get_results($wpdb->prepare(
+				"SELECT * FROM {$wpdb->prefix}bookworm_books WHERE user_id_shelf = %d AND date_finished IS NOT NULL AND date_finished != '0000-00-00' AND date_finished != '1970-01-01' AND date_finished BETWEEN %s AND %s AND FIND_IN_SET(%d, tags)",
+				$wp_current_user_id,
+				$bookshelf_start_date,
+				$bookshelf_end_date,
+				$tagID
+			));
+			$book_count = count($book_entries);
 
 			$output .= '<div class="tag-count-wrapper">';
-			$output .= '<li class="tag-entry active ' . $tag->slug . '" data-id="' . $tag->slug . '">' . $tag->name . '</li>';
+			$output .= '<li class="tag-entry active ' . $tag->slug . '" data-id="' . $tag->slug . '">';
+			$output .= '<a class="popup-trigger" href="#popup_tags_' . $tagID . '">';
+			$output .= $tag->name;
+			$output .= '</a>';
+			$output .= '</li>';
 			$output .= '<span class="book-count">' . $book_count . '</span>';
+			$output .= '</div>';
+			$output .= '<div id="popup_tags_' . $tagID . '" class="popup-wrapper popup-tags ' . $tagID . '">';
+			$output .= '<div class="popup popup-medium">';
+			$output .= '<a class="close-button popup-close" href="#"><img src="' . get_stylesheet_directory_uri() . '/img/icon_close.svg' . '" alt="Close button" /></a>';
+			foreach ($book_entries as $book_entry) {
+				$output .= '<div class="book-entry popup-book-entry">';
+				$output .= '<a class="book-entry-edit-link" href="/update-book/?id=' . $book_entry->id . '">';
+				$output .= '<div class="book-entry-thumb">
+					<img class="book_entry_img" src="' . $book_entry->small_thumbnail_url . '">
+				</div>';
+				$output .= '<div class="book-entry-details">';
+				$output .= '<div class="book-entry-title">' . stripslashes($book_entry->title) . '</div>';
+				$output .= '<div class="book-entry-author">by ' . sanitizeInput($book_entry->author) . '</div>';
+				$output .= '</div>';
+				$output .= '</a>';
+				$output .= '</div>';
+			}
+			$output .= '</div>';
 			$output .= '</div>';
 		}
 		echo $output;
