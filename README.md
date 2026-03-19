@@ -11,4 +11,4 @@ This package is a custom WordPress theme. BookWorm uses the Google Books API to 
 * WP User Manager plugin (latest)
 
 ## Acknowledgements
-Thought leadership and design by [Madhurima Chakraborty](https://madhurimachakraborty.net).
+Thought leadership and design by [Madhurima Chakraborty](https://madhurimachakraborty.net) (this whole thing is Madhurima's baby!). Datepicker functionality and UI from [Air Datepicker](https://air-datepicker.com/).
